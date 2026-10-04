@@ -144,7 +144,7 @@ export function makeCar(color: string, cop = false, style: CarBody = 'coupe'): T
  */
 function addLampHalos(car: THREE.Group): void {
   const map = lampGlowTexture();
-  const lamps = car.children.filter((c) => c.name === 'headlight' || /^lamp_tail/.test(c.name));
+  const lamps = car.children.filter((c) => c.name === 'headlight' || /^lamp_tail_[lr]$/.test(c.name));
   for (const lamp of lamps) {
     const geometry = (lamp as THREE.Mesh).geometry;
     geometry.computeBoundingBox();
@@ -202,7 +202,7 @@ export function setBrakeLights(car: THREE.Object3D, on: boolean): void {
   if (!!car.userData.brake === on) return;
   car.userData.brake = on ? 1 : 0;
   for (const part of car.children) {
-    if (!/^lamp_tail/.test(part.name) && part.name !== 'tail_bar') continue;
+    if (!/^lamp_tail_[lr]$/.test(part.name) && part.name !== 'tail_bar') continue;
     ((part as THREE.Mesh).material as THREE.MeshBasicMaterial).color.set(on ? TAIL_BRAKING : TAIL_RUNNING);
   }
 }
