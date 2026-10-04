@@ -95,7 +95,7 @@ for (const view of VIEWS) {
   await page.goto(url, { waitUntil: 'load' });
   // Generating the city and building its instanced meshes takes a moment, and
   // a screenshot taken before that is a picture of an empty sky.
-  await page.waitForSelector('#game3d', { timeout: 20000 });
+  await page.waitForSelector('#game3d', { timeout: 90000 });
   await page.waitForTimeout(2500);
 
   if (view === 'drive') {

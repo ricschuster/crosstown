@@ -1070,6 +1070,23 @@ export class CityView {
     this.pmrem ??= new THREE.PMREMGenerator(this.renderer);
     const probe = new THREE.Scene();
     probe.add(new THREE.Mesh(this.skyDome.geometry, this.skyDome.material));
+    // What a clear coat shows is structure: a dark ground under the horizon and a broken
+    // skyline on it. A bare gradient gives a flank one flat tone; this gives it the dark
+    // lower band and the streaks along the shoulder that read as lacquer in a photograph.
+    const ground = new THREE.Color(this.fill.groundColor).multiplyScalar(0.55);
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(6000 * M, 32), new THREE.MeshBasicMaterial({ color: ground }));
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -2 * M;
+    probe.add(floor);
+    const block = new THREE.MeshBasicMaterial({ color: ground.clone().multiplyScalar(0.8) });
+    for (let i = 0; i < 40; i++) {
+      const a = (i / 40) * Math.PI * 2;
+      const h = (14 + ((i * 37) % 23) * 3) * M;
+      const b = new THREE.Mesh(new THREE.BoxGeometry(40 * M, h, 40 * M), block);
+      b.position.set(Math.cos(a) * 420 * M, h / 2 - 2 * M, Math.sin(a) * 420 * M);
+      b.rotation.y = -a;
+      probe.add(b);
+    }
     const old = this.envMap;
     this.envMap = this.pmrem.fromScene(probe, 0.02, 1 * M, 8000 * M).texture;
     old?.dispose();
