@@ -286,6 +286,23 @@ three renders to get right.
   a gentle tilt looks like grain. Checked on red, white, black and blue with a
   throwaway Playwright script (respray through `crosstown.world.resprays`, and
   the director's `update` wrapped to pull the camera in); not committed.
+  **2b-2e done:** (2b) `bake_light()` in `kestrel.py` ray-casts per-vertex
+  ambient occlusion against the wheels and a temporary ground plane (R, 16
+  cosine samples, 0.7 m reach, a few seconds) and a smoothed convexity (G),
+  exported as `COLOR_0` (`export_vertex_color='ACTIVE'`, float, survives as
+  normalised ushort); the loader's `shade()` turns them into the paint's vertex
+  colour. (2c) dirt is physical and lives in `shade()`: low on the flank,
+  plumes thrown rearward behind each wheel, dust on up-facing panels, tinted
+  toward brown so white looks dusty; `DIRT` is the one knob. (2d) `wearPaint()`
+  is called from the view's existing wear block with the sim's `hurt` (read
+  only): a `uWear` uniform scuffs the coat to dark primer, mostly at the ends,
+  and the coat dulls; the scuff noise is skipped when wear is 0. (2e) glass is a
+  mirror-like physical material (it picks up the city's env map), trim is matte
+  rubber; both cached, and a mesh with no colour attribute must not ask for
+  vertex colours or it draws black. Lessons: `patch` is a reserved word in
+  GLSL; the first scuff colour was mid-grey and looked like pale camouflage,
+  bare primer is near black; the AO is sharp, so the loader floors it
+  (`0.35 + 0.65 * light`) or crevices go black in daylight.
 - **Open:** the shoulder is still soft at chase distance; headlight glow check at night; other bodies would need their
   own parameter sets (the script is one car, not yet a kit).
 

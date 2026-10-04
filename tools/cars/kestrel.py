@@ -440,12 +440,63 @@ if 'bulge' in globals():
     bpy.context.view_layer.objects.active = body
     bpy.ops.object.join()
 
+# ---- baked light (#620 2b): ambient occlusion and edge highlights as vertex colour --------------
+# R = how open the surface is to the sky (rays against the wheels and a ground plane, so the
+# arches, sills and the nose and tail near the road go dark), G = convexity (a sharp crown or
+# crease catches light). The loader turns these, plus dirt, into the paint's vertex colour.
+def bake_light(samples=16, reach=0.7):
+    import random
+    rnd = random.Random(7)
+    for o in [glass] + fit: o.hide_viewport = True
+    bpy.ops.mesh.primitive_plane_add(size=40, location=(0, 0, 0))
+    ground = bpy.context.active_object
+    bpy.context.view_layer.update()
+    dgb = bpy.context.evaluated_depsgraph_get()
+    me = body.data
+    bmb = bmesh.new(); bmb.from_mesh(me); bmb.verts.ensure_lookup_table()
+    bmesh.ops.recalc_face_normals(bmb, faces=bmb.faces)
+    fib = []
+    for i in range(samples):             # cosine-weighted hemisphere, fixed so the bake is repeatable
+        u = (i + 0.5) / samples; ph = i * 2.399963
+        r = math.sqrt(u); fib.append((r * math.cos(ph), r * math.sin(ph), math.sqrt(1 - u)))
+    ao = []
+    for v in bmb.verts:
+        n = v.normal.normalized()
+        t = n.cross(Vector((0, 0, 1)) if abs(n.z) < 0.9 else Vector((1, 0, 0))).normalized()
+        b = n.cross(t)
+        org = v.co + n * 0.004
+        occ = 0.0
+        for x, y, z in fib:
+            d = (t * x + b * y + n * z).normalized()
+            ok, loc, *_ = scene.ray_cast(dgb, org, d, distance=reach)
+            if ok: occ += 1.0 - (loc - org).length / reach
+        ao.append(1.0 - occ / samples)
+    cv = []
+    for v in bmb.verts:
+        n = v.normal.normalized(); tot = 0.0; c = 0
+        for e in v.link_edges:
+            d = e.other_vert(v).co - v.co
+            if d.length > 1e-6: tot += d.dot(n) / d.length; c += 1
+        cv.append(-tot / c if c else 0.0)
+    for _ in range(4):                   # the 1 cm mesh is noisy: spread it over a few centimetres
+        cv = [(cv[v.index] + sum(cv[e.other_vert(v).index] for e in v.link_edges)) / (1 + len(v.link_edges)) for v in bmb.verts]
+    attr = me.color_attributes.new('light', 'FLOAT_COLOR', 'POINT')
+    for v in bmb.verts:
+        attr.data[v.index].color = (max(0.0, ao[v.index]), max(0.0, min(1.0, cv[v.index] * 6.0)), 0.0, 1.0)
+    me.color_attributes.active_color = attr; me.color_attributes.render_color_index = len(me.color_attributes) - 1
+    bmb.free()
+    bpy.data.objects.remove(ground, do_unlink=True)
+    for o in [glass] + fit: o.hide_viewport = False
+import time; _t = time.time()
+bake_light()
+print('bake seconds', round(time.time() - _t, 1))
+
 # ---- export ---------------------------------------------------------------------
 body.name = 'a_body'; glass.name = 'b_glass'
 root = bpy.data.objects.new('kestrel', None); scene.collection.objects.link(root)
 for o in [body, glass] + wheels + fit: o.parent = root
 bpy.ops.export_scene.gltf(filepath=OUT, export_format='GLB', export_yup=True, export_apply=True,
-                          export_materials='EXPORT', export_cameras=False, export_lights=False)
+                          export_materials='EXPORT', export_vertex_color='ACTIVE', export_cameras=False, export_lights=False)
 print('tris', sum(len(o.data.polygons) for o in [body, glass] + wheels + fit))
 
 # ---- preview ----------------------------------------------------------------------
