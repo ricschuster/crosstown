@@ -45,7 +45,7 @@ export class GameAudio {
       master.connect(ctx.destination);
       this.master = master;
 
-      // engine: a sawtooth through a lowpass — a hum that rises with speed
+      // engine: a sawtooth through a lowpass - a hum that rises with speed
       const engineOsc = ctx.createOscillator();
       engineOsc.type = 'sawtooth';
       engineOsc.frequency.value = 55;
