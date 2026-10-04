@@ -71,9 +71,9 @@ def pchip(keys, x):
     return h00*ys[i] + h10*h*m[i] + h01*ys[i+1] + h11*h*m[i+1]
 
 # t runs tail (0) to nose (1). Heights in metres above the ground.
-ROOF = [(0, .66), (.025, .80), (.07, .88), (.20, 1.00), (.30, 1.09), (.43, 1.13), (.50, 1.10),
-        (.60, .97), (.70, .86), (.80, .81), (.90, .74), (.97, .60), (1, .50)]
-BELT = [(0, .74), (.04, .86), (.15, .91), (.35, .92), (.6, .88), (.72, .83), (.8, .80), (.9, .74), (1, .58)]
+ROOF = [(0, .66), (.025, .78), (.07, .86), (.20, .97), (.30, 1.06), (.43, 1.11), (.50, 1.08),
+        (.60, .87), (.70, .79), (.80, .77), (.90, .66), (.97, .50), (1, .42)]
+BELT = [(0, .74), (.04, .84), (.15, .89), (.35, .90), (.6, .85), (.72, .80), (.8, .76), (.9, .66), (1, .44)]
 def roof(t): return pchip(ROOF, t)
 def belt(t): return pchip(BELT, t)
 
@@ -427,7 +427,7 @@ for s in (-1, 1):
     side = 'l' if s < 0 else 'r'
     # headlamps: an almond swept up from the nose toward the crest of the wing
     fit.append(lamp('lamp_head_' + side, M_HEAD, -3.0, (0, 1, 0), 0.38, 0.65,
-                    lambda u: 0.60 + 0.07 * u, lambda u: 0.046 - 0.018 * u, s))
+                    lambda u: 0.485 + 0.06 * u, lambda u: 0.042 - 0.016 * u, s))
     # tail lamps: a wide thin almond hooked down at the outer corner
     fit.append(lamp('lamp_tail_' + side, M_TAIL, 3.0, (0, -1, 0), 0.13, 0.74,
                     lambda u: 0.80 - 0.05 * u * u, lambda u: 0.050 - 0.018 * u, s))

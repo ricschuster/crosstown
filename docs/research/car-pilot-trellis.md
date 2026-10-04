@@ -396,3 +396,16 @@ environment (`envMapIntensity` 0.7, clearcoat 0.8). Why it is still short of the
 render: one cross-section scaled along the car, simple baked light, crude lamps and mirrors.
 Renders in `~/Pictures/crosstown-compare/shape2/`.
 
+
+**Side-view overlay and lamps (2026-10-04):** `tools/cars/sideview.py` renders our side
+silhouette orthographically at 250 px/m and `tools/cars/overlay.py` lays it over
+`p3_s2.png` (framed by its wheel centres) and prints top and bottom edges at fifteen
+stations. First run: roof peak +0.03 m, but the windscreen and hood 8-13 cm too high.
+`ROOF` and `BELT` lowered from t 0.5 forward (hood now -0.02 to +0.05 of the reference),
+rear 3 cm lower; top edge within about 3 cm everywhere bar the mirror. Still too long:
+ours 3.83 m against 3.68 m, all in the nose (splitter and lamps stand 0.13 m past the
+reference's front overhang); not fixed. Bottom edges are not comparable (the reference mask
+includes its floor shadow). Lamps are almond lenses in pockets cut into the shell
+(`lamp()`), the cutter keeping its x,z footprint so a sloping nose does not shift the opening.
+The fender ripple was the flank bumps gated on noisy vertex normals; they now weight by
+width. A sawtooth remains on the nose's lower dark edge (material split of subdivided faces).
