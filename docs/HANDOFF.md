@@ -3,6 +3,33 @@
 Where the project stands, so a fresh session can pick it up without re-deriving
 anything. This is a solo project: see [CONTRIBUTING](../CONTRIBUTING.md).
 
+- **Update (2026-10-04, late night): lamps, mirrors and side-view overlay done; closing the gap to the reference next (#620, #584).**
+  PRs #624 (lamps, mirrors, fender ripple) merged; #625 (overlay tools, hood and windscreen lowered) was open at handoff,
+  check `git log origin/main` before assuming. #625 is branch `kestrel-side-overlay` (overlay tools, ROOF/BELT lowered, lamps at the nose corner, plan and this handoff); its merge state was BLOCKED (waiting on CI) at handoff, so check `gh pr view 625`, and if it merged without the handoff commit, re-send that commit with `rebase --onto origin/main`. Both were squash-merged before the last commit each time, so
+  later commits had to be rebased `--onto origin/main` and re-sent (see the stranded-commit memory).
+  - **Done:** headlamps and tail lamps are almond lenses in pockets cut into the shell (`lamp()`,
+    `lamp_solid()` in `tools/cars/kestrel.py`; the cutter keeps its x,z footprint, the lens is as deep as the
+    pocket); mirrors have a stalk, housing and dark face, at z 0.80 on the door; the fender ripple was the flank
+    bumps gated on noisy vertex normals (now weighted by width) plus top points out of order where roof meets belt.
+  - **The overlay:** `tools/cars/sideview.py` and `tools/cars/overlay.py` (usage in their headers and in
+    car-pilot-trellis.md); output `~/Pictures/crosstown-compare/lamps/overlay.png`, which the owner likes. The top edge
+    is within about 3 cm of `flux2/p3_s2.png` bar the mirror.
+  - **Plan, in order (full text in car-pilot-trellis.md, "Closing the gap to the reference"):**
+    1 fit `ROOF`/`BELT`/nose by script against the silhouette; 2 width from a front or rear overlay (`p4_s*.png`);
+    3 interior edge-map comparison; 4 lighting and reflections (studio box, clear coat, env map); 5 detail:
+    nose 0.13 m too long, sawtooth on the nose's lower dark edge, wheels, window frame, door line; 6 route E fallback
+    (owner's call). Brake lights (#620 item 3) after the shape work.
+  - **Not done / unchecked:** the white flare near the rear window (looked like a plain highlight on the A-pillar glass);
+    close-up and night looks at the new lamps; the lens is a flat colour with no inner detail; `npm run test` not run.
+  - **Method notes:** look in the game (`LOOK=models npm run cityshot -- --view drive`) as well as Blender;
+    close-up preview cameras `nose34`, `nose_side` exist in `kestrel.py`; temp scripts go in `$CLAUDE_JOB_DIR/tmp`.
+  - **Continue with this prompt:**
+    > Continue the Kestrel (#620, car pilot #584). Read docs/HANDOFF.md (the 2026-10-04 late-night entry) and the
+    > "Closing the gap to the reference" plan at the end of docs/research/car-pilot-trellis.md. Do plan items 1, 2 and the
+    > nose fixes in 5: a script that fits the profile and nose length to the silhouette of
+    > ~/Pictures/crosstown-compare/flux2/p3_s2.png, then width from the rear set, then show a new overlay.png. Look in the
+    > game too. Original and unbranded; sim untouched; npm run typecheck and npm run test before a PR; never pkill -f
+    > broadly; check whether the previous PR merged before pushing more to its branch.
 - **Update (2026-10-04, night): colour fix and shape pass done, lamps and mirrors next (#620 items 0 and 0b, #584).**
   PR #623 holds everything (colour, shape, toy-look pass; #622 merged early and stranded them, so they were re-sent). Details are in the last
   three entries of [docs/research/car-pilot-trellis.md](research/car-pilot-trellis.md).
