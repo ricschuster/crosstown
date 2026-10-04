@@ -3,13 +3,13 @@
 Where the project stands, so a fresh session can pick it up without re-deriving
 anything. This is a solo project: see [CONTRIBUTING](../CONTRIBUTING.md).
 
-- **SESSION END (2026-10-04, Sunday evening): brake lights, grade fade, bezel fix and shut-line fix all on `main`; Dependabot auto-merge PR #639 open (#620, #584).**
+- **SESSION END (2026-10-04, Sunday evening): brake lights, grade fade, bezel fix and shut-line fix all on `main`; Dependabot auto-merge (#639) merged (#620, #584).**
   - **Merged today:** #636 (brake lights, `compensateForGrade`, and `GRADE.veilFade` in `scene/grade.ts`: the lift and the golden-hour
     veil fade on saturated pixels, so the Kestrel is red not salmon; owner approved the look), #637 (lamp bezels are trim, matched by
     exact name `lamp_(head|tail)_[lr]`, which was the "halo smear"), #638 (shut lines ray-cast against `body` not the stale depsgraph,
     which held the spoiler as a 2 m cube: those were the stray lines; deeper door scoop, nose smoothing pass), and the Dependabot
-    backlog #629-#635 (armed by hand). Branch `kestrel-brake-lights-wip` is dead, delete it.
-  - **Open:** #639 adds `.github/workflows/auto-merge-dependabot.yml` (`pull_request_target`, never runs PR code). Untested until the
+    backlog #629-#635 (armed by hand). Repo tidied the same evening: 30 merged-PR branches and two clean worktrees deleted (25 local branches left; the rest hold stranded post-squash commits, local-only work or parked #469 `collectibles-frozen`, each to be judged before deleting).
+  - **Open:** #639 (merged) added `.github/workflows/auto-merge-dependabot.yml` (`pull_request_target`, never runs PR code). Untested until the
     next Dependabot PR opens: check it gets armed. Merges by github-actions start no follow-on workflows, so a second Dependabot PR
     may stay BEHIND; `@dependabot rebase` (or `recreate` if it says it was edited).
   - **Not done, in order:** (1) the nose and flank barely changed: the front wing still has a visible edge at the arch and the flank
