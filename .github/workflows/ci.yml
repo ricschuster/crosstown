@@ -20,6 +20,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # CLAUDE.md house style. The two editor pages are exempt: they show an
+      # em dash as the "no value" placeholder in their readouts, which is UI,
+      # not prose.
+      - name: No em dashes in tracked text
+        run: |
+          if git grep -In $'\xe2\x80\x94' -- . ':!LICENSE' ':!tools/*editor.html'; then
+            echo "Em dash found. See CLAUDE.md house style: use a plain hyphen or reword." >&2
+            exit 1
+          fi
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:

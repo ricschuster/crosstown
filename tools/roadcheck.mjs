@@ -523,7 +523,7 @@ if (draw) {
         return { minX: cx - reach, maxX: cx + reach, minZ: cz - reach, maxZ: cz + reach };
       })(),
         900,
-        `${flaggedRoads.map((r) => r.id).join(', ')} — ${((reach * 2) / 1000).toFixed(1)} km across`,
+        `${flaggedRoads.map((r) => r.id).join(', ')} - ${((reach * 2) / 1000).toFixed(1)} km across`,
       ),
     });
   }

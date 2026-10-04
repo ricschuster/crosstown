@@ -193,13 +193,13 @@ tools/               citylap + citydriver, citymap, cityshot, pwacheck, icons
 
 ## Docs
 
-- [Project brief](docs/design/00_project_brief.md) — what this is and why
-- [Architecture decisions](docs/decisions/) — ADRs for the choices that stick
-- [Session handoff](docs/HANDOFF.md) — where the project stands right now
+- [Project brief](docs/design/00_project_brief.md) - what this is and why
+- [Architecture decisions](docs/decisions/) - ADRs for the choices that stick
+- [Session handoff](docs/HANDOFF.md) - where the project stands right now
 
 ## License
 
-GNU General Public License v3.0 — see [LICENSE](LICENSE).
+GNU General Public License v3.0 - see [LICENSE](LICENSE).
 
 A non-commercial original work. It is not affiliated with, endorsed by or
 derived from any commercial racing game, and contains no third-party names,

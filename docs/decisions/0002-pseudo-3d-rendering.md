@@ -5,8 +5,8 @@
 
 ## Context
 
-We want the sensation of driving a *the street-racer template* car — speed, a
-road rushing toward the horizon, hills and curves — as a solo-buildable browser
+We want the sensation of driving a *the street-racer template* car - speed, a
+road rushing toward the horizon, hills and curves - as a solo-buildable browser
 project. The realistic options were:
 
 1. A true 3D engine (Three.js / WebGL) with real geometry and a camera.
@@ -36,7 +36,7 @@ Stack: TypeScript + HTML5 Canvas 2D + Vite. No game engine, no runtime deps.
 
 - Small, dependency-light codebase that builds to static files and deploys
   anywhere (e.g. GitHub Pages).
-- Cheap to render — plain Canvas 2D fills, no WebGL.
+- Cheap to render - plain Canvas 2D fills, no WebGL.
 - Everything is faked in 2D: there is no real 3D space. Features like traffic,
   cops, and sprites must be projected using the same per-segment scale trick
   rather than placed in a 3D scene.

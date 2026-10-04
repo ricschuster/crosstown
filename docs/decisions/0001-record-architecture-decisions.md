@@ -20,7 +20,7 @@ than editing history.
 ## Format
 
 Each ADR has: a title line (`# N. Title`), a status and date, and the sections
-**Context**, **Decision**, and **Consequences**. Keep them short — a screen or
+**Context**, **Decision**, and **Consequences**. Keep them short - a screen or
 two. Status is one of: proposed, accepted, superseded (by ADR-N), or deprecated.
 
 ## Consequences
