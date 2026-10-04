@@ -5,7 +5,7 @@ anything. This is a solo project: see [CONTRIBUTING](../CONTRIBUTING.md).
 
 - **Update (2026-10-04, late night): lamps, mirrors and side-view overlay done; closing the gap to the reference next (#620, #584).**
   PRs #624 (lamps, mirrors, fender ripple) merged; #625 (overlay tools, hood and windscreen lowered) was open at handoff,
-  check `git log origin/main` before assuming. Both were squash-merged before the last commit each time, so
+  check `git log origin/main` before assuming. #625 is branch `kestrel-side-overlay` (overlay tools, ROOF/BELT lowered, lamps at the nose corner, plan and this handoff); its merge state was BLOCKED (waiting on CI) at handoff, so check `gh pr view 625`, and if it merged without the handoff commit, re-send that commit with `rebase --onto origin/main`. Both were squash-merged before the last commit each time, so
   later commits had to be rebased `--onto origin/main` and re-sent (see the stranded-commit memory).
   - **Done:** headlamps and tail lamps are almond lenses in pockets cut into the shell (`lamp()`,
     `lamp_solid()` in `tools/cars/kestrel.py`; the cutter keeps its x,z footprint, the lens is as deep as the
