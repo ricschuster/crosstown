@@ -3,6 +3,35 @@
 Where the project stands, so a fresh session can pick it up without re-deriving
 anything. This is a solo project: see [CONTRIBUTING](../CONTRIBUTING.md).
 
+- **Update (2026-10-04, night): colour fix and shape pass done, lamps and mirrors next (#620 items 0 and 0b, #584).**
+  PR #622 holds everything (colour, shape, toy-look pass). Details are in the last
+  three entries of [docs/research/car-pilot-trellis.md](research/car-pilot-trellis.md).
+  - **Colour (`a450786`):** `DIRT` 0.45, occlusion floor `0.5 + 0.5 * light`, and
+    `CarPool.place` multiplies the lacquer paint's saturation by 1.2 to give back
+    what the grade takes (the grade itself is untouched, it is the approved look).
+  - **Shape (`4c649c8`):** roof peak 1.13 m at t 0.43, fenders and hood higher,
+    `WHEELZ` 1.23 (also in `glbcar.ts` `shade()`), haunches 7% and 5%, roof 0.52 m wide.
+  - **Toy-look pass (`ca29e8e`):** bold five-spoke wheels on a dark barrel, arches 4.5 cm
+    clear, B-pillar, side gills, `flank_offset()` bumps (haunch swell, door scoop, sill tuck,
+    shoulder lip), paint `envMapIntensity` 0.7 and clearcoat 0.8 (0.9 washed red to pink).
+  - **Why it is still short of the FLUX render:** the body is one cross-section scaled along
+    the car, so surface sculpting is bolted on; the light is a vertex bake; lamps and mirrors
+    are blobs; no interior. If another scripted round still reads as a toy, the fallback is a
+    TRELLIS body with our own wheels, glass and lamps (route E, the owner's call).
+  - **Not done:** lamps (lens shapes, slimmer swept headlamps) and mirrors; a numeric overlay
+    of the side view on `p3_s2.png`; a longer windscreen; a close-up look and a night look at
+    the new shape; an unidentified white flare near the rear window in the `cityshot` drive
+    view (sun glint or halo, unchecked); then brake lights (#620 item 3) and the rest of Tier 2.
+  - **Images** (outside the repo): `~/Pictures/crosstown-compare/shape1/` and `shape2/`
+    (`p_sheet.png` is the Blender sheet, `city-drive.png` the in-game shot).
+  - **Continue with this prompt:**
+    > Continue the Kestrel (#620, car pilot #584). Read docs/HANDOFF.md (the 2026-10-04
+    > night entry) and the last three entries of docs/research/car-pilot-trellis.md. Do the
+    > lamps and mirrors in tools/cars/kestrel.py, find the white flare near the rear window,
+    > overlay the side view on ~/Pictures/crosstown-compare/flux2/p3_s2.png, then brake lights
+    > (#620 item 3). Look in the game (cityshot with LOOK=<all defaults>,models, rerun if it
+    > exits silently), never only in Blender. Original and unbranded; sim untouched; npm run
+    > typecheck and npm run test before a PR; never pkill -f broadly.
 - **Update (2026-10-04, end of session): shape measured, loft changes next (#620 item 0b, #584).**
   The owner thinks the Kestrel still looks fake, mostly from its shape, and chose
   the shape pass next, after the colour fix and before brake lights. Reference
