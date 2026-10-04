@@ -58,7 +58,7 @@ function lacquer(): THREE.MeshPhysicalMaterial {
   // Wear (#620 2d): 0 is a clean coat, 1 is a wreck. The view sets it from the sim's damage.
   const wear = { value: 0 };
   const material = new THREE.MeshPhysicalMaterial({
-    roughness: 0.5, metalness: 0.12, envMapIntensity: 0.5, clearcoat: 0.5, clearcoatRoughness: 0.08,
+    roughness: 0.42, metalness: 0.12, envMapIntensity: 0.7, clearcoat: 0.8, clearcoatRoughness: 0.08,
     vertexColors: true, name: 'paint',
   });
   material.userData.wear = wear;
@@ -132,7 +132,7 @@ export function wearPaint(material: THREE.Material, hurt: number): void {
   const wear = material.userData.wear as { value: number } | undefined;
   if (!wear) return;
   wear.value = hurt;
-  (material as THREE.MeshPhysicalMaterial).clearcoat = 0.5 * (1 - 0.6 * hurt);
+  (material as THREE.MeshPhysicalMaterial).clearcoat = 0.8 * (1 - 0.6 * hurt);
 }
 
 /** How dirty a car comes: 0 is showroom, 1 is a car that has lived in the city. */

@@ -387,3 +387,12 @@ narrow cabin over wide haunches. The side view now sits close to `p3_s2.png`;
 seen in the game at chase distance only, not overlaid numerically, and no close
 camera exists yet. The windscreen is still short next to the reference's.
 
+**Toy-look pass (2026-10-04):** bold five-spoke wheels over a dark barrel (rim radius
+0.225 m, arches 4.5 cm clear instead of 7.5), a B-pillar splitting the side glass,
+four gill slats behind each front wheel, and `flank_offset()` in `kestrel.py`: hand-placed
+bumps displacing the smoothed shell (haunch swell over each wheel, door scoop, sill tuck,
+shoulder lip, 2-5 cm), the features a loft cannot make. Paint takes more of the
+environment (`envMapIntensity` 0.7, clearcoat 0.8). Why it is still short of the FLUX
+render: one cross-section scaled along the car, simple baked light, crude lamps and mirrors.
+Renders in `~/Pictures/crosstown-compare/shape2/`.
+

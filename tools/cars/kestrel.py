@@ -48,7 +48,7 @@ M_PAINT = mat('paint', PAINT, 0.15, 0.4, coat=0.35)
 M_TRIM = mat('trim', (0.02, 0.02, 0.025, 1), 0.0, 0.7)
 M_GLASS = mat('glass', (0.02, 0.03, 0.04, 1), 0.0, 0.05)
 M_TYRE = mat('tyre', (0.025, 0.025, 0.027, 1), 0.0, 0.85)
-M_RIM = mat('rim', (0.7, 0.72, 0.75, 1), 1.0, 0.25)
+M_RIM = mat('rim', (0.55, 0.56, 0.58, 1), 1.0, 0.3)
 M_DISC = mat('disc', (0.12, 0.12, 0.13, 1), 0.8, 0.5)
 M_CALIPER = mat('caliper', (0.7, 0.05, 0.04, 1), 0.2, 0.4)
 M_HEAD = mat('lamp_head', (0.9, 0.95, 1, 1), 0.0, 0.1, emit=(0.8, 0.9, 1, 1))
@@ -101,7 +101,7 @@ def ring(t):
         (hw * 0.80, B),
         (hw * 0.96, B + 0.045),
         (hw * 1.0, B + (Bl - B) * 0.30),
-        (hw * 0.955, B + (Bl - B) * 0.55),
+        (hw * 0.925, B + (Bl - B) * 0.55),
         (hw * 1.0, Bl - 0.085),
         (hw * 0.90, Bl),
         (gx, Bl + 0.012),
@@ -144,7 +144,7 @@ for e in bm.edges:
         elif ia == ib and {ja, jb} in ({5, 6}, {16, 17}):
             e[crease] = 0.85
         elif ia == ib and {ja, jb} in ({4, 5}, {17, 18}):
-            e[crease] = 0.4
+            e[crease] = 0.7
 for f in bm.faces:
     idx = [ring_of[v] for v in f.verts if v in ring_of]
     if len(idx) != 4: continue
@@ -159,7 +159,7 @@ for f in bm.faces:
     if seg in (0, 1, 21, 20) or (ends and seg in (2, 19)):
         f.material_index = 1
         continue
-    side = (seg in (7, 8) or seg in (13, 14)) and 0.27 < t < 0.64
+    side = (seg in (7, 8) or seg in (13, 14)) and 0.27 < t < 0.64 and not 0.405 < t < 0.445   # a B-pillar between door and quarter glass
     screen = seg in (10, 11) and 0.58 < t < 0.70
     rear = seg in (10, 11) and 0.13 < t < 0.29
     if side or screen or rear: f.material_index = 2
@@ -178,6 +178,25 @@ sub = body.modifiers.new('sub', 'SUBSURF'); sub.levels = 2; sub.render_levels = 
 bpy.context.view_layer.objects.active = body; body.select_set(True)
 bpy.ops.object.modifier_apply(modifier='sub')
 
+# ---- flank sculpting: displace the smoothed shell outward or inward by hand-placed bumps ----
+# The loft is one cross-section scaled along the car, so on its own the flank is a slab. These
+# are the features a loft cannot make: the fender swelling over each wheel, a scoop in the door
+# below the shoulder, a sill tucked under it, and a sharpened shoulder.
+def g(d, w): return math.exp(-(d / w) ** 2)
+def flank_offset(y, z, side_n):
+    off = 0.0
+    for wy in (WHEELZ, -WHEELZ):        # haunch swell, widest at the arch top
+        off += 0.05 * g(y - wy, 0.52) * g(z - 0.66, 0.2)
+    off -= 0.055 * g(y - 0.0, 0.62) * g(z - 0.42, 0.12)      # door scoop
+    off -= 0.045 * g(y - 0.0, 1.0) * g(z - 0.22, 0.07)         # sill tuck
+    off += 0.024 * g(y - 0.1, 1.0) * g(z - 0.74, 0.04)        # shoulder lip
+    return off * side_n
+for v in body.data.vertices:
+    nx = v.normal.x
+    if abs(v.co.x) > 0.5 and abs(nx) > 0.45:
+        v.co.x += flank_offset(v.co.y, v.co.z, 1 if v.co.x > 0 else -1)
+body.data.update()
+
 # ---- wheel arches by boolean -------------------------------------------------
 def cylinder(radius, depth, loc, verts=48):
     bpy.ops.mesh.primitive_cylinder_add(vertices=verts, radius=radius, depth=depth, location=loc,
@@ -189,7 +208,7 @@ def cylinder(radius, depth, loc, verts=48):
 
 for sx in (-1, 1):
     for sy in (-1, 1):
-        cutter = cylinder(TYRE_R + 0.075, 0.62, (sx * (WHEEL_X + 0.1), sy * WHEELZ, TYRE_R))
+        cutter = cylinder(TYRE_R + 0.045, 0.62, (sx * (WHEEL_X + 0.1), sy * WHEELZ, TYRE_R))
         # keep the cut a half-disc: nothing below the hub-line lip matters for the shell
         md = body.modifiers.new('arch', 'BOOLEAN'); md.object = cutter; md.operation = 'DIFFERENCE'
         md.solver = 'EXACT'
@@ -246,20 +265,20 @@ def wheel_mesh(outboard):
         out.faces.ensure_lookup_table()
         for f in out.faces[before:]: f.material_index = mi
     hw = TYRE_W / 2
-    tyre = [(-hw*.98, .215), (-hw*1.0, .25), (-hw*.88, .29), (-hw*.55, .314), (hw*.55, .314), (hw*.88, .29),
-            (hw*1.0, .25), (hw*.98, .215), (hw*.82, .205), (-hw*.82, .205), (-hw*.98, .215)]
+    tyre = [(-hw*.98, .23), (-hw*1.0, .25), (-hw*.88, .29), (-hw*.55, .314), (hw*.55, .314), (hw*.88, .29),
+            (hw*1.0, .25), (hw*.98, .23), (hw*.82, .225), (-hw*.82, .225), (-hw*.98, .23)]
     add(spin(tyre, 0), 0)
-    rim = [(hw*.82, .205), (hw*.9, .212), (hw*.84, .2), (hw*.45, .196), (hw*.2, .09), (hw*.14, .05), (hw*.14, 0.0)]
-    add(spin(rim, 1), 1)
+    rim = [(hw*.82, .225), (hw*.9, .232), (hw*.84, .218), (hw*.45, .21), (hw*.2, .09), (hw*.14, .05), (hw*.14, 0.0)]
+    add(spin(rim, 2), 2)      # the barrel and dish are dark, so the spokes read against them
     # five twin spokes from the hub to the lip, slightly proud of the dish
     for k in range(5):
-        for off in (-0.11, 0.11):
+        for off in (-0.14, 0.14):
             a = 2 * math.pi * k / 5 + 0.3 + off
             pb = bmesh.new()
             def v(ax, r, w):
                 return pb.verts.new((ax, r * math.cos(a) - w * math.sin(a), r * math.sin(a) + w * math.cos(a)))
-            o = [v(hw*.80, 0.07, 0.02), v(hw*.80, 0.07, -0.02), v(hw*.86, 0.2, -0.011), v(hw*.86, 0.2, 0.011)]
-            i = [v(hw*.45, 0.07, 0.02), v(hw*.45, 0.07, -0.02), v(hw*.5, 0.2, -0.011), v(hw*.5, 0.2, 0.011)]
+            o = [v(hw*.80, 0.07, 0.03), v(hw*.80, 0.07, -0.03), v(hw*.86, 0.225, -0.02), v(hw*.86, 0.225, 0.02)]
+            i = [v(hw*.45, 0.07, 0.03), v(hw*.45, 0.07, -0.03), v(hw*.5, 0.225, -0.02), v(hw*.5, 0.225, 0.02)]
             for f in ((o[0], o[1], o[2], o[3]), (o[0], o[3], i[3], i[0]), (o[1], i[1], i[2], o[2]),
                       (o[3], o[2], i[2], i[3]), (o[0], i[0], i[1], o[1])):
                 try: pb.faces.new(f)
@@ -286,7 +305,7 @@ def wheel_mesh(outboard):
     bmesh.ops.recalc_face_normals(out, faces=out.faces)
     m = bpy.data.meshes.new('wheel'); out.to_mesh(m); out.free()
     for mt in (M_TYRE, M_RIM, M_DISC, M_CALIPER): m.materials.append(mt)
-    for p in m.polygons: p.use_smooth = (p.material_index in (0, 1))
+    for p in m.polygons: p.use_smooth = (p.material_index in (0, 1, 2))
     return m
 
 wheels = []
@@ -378,6 +397,12 @@ if loc:                         # a low power bulge, painted so it repaints with
 for s in (-1, 1):               # twin vent slits either side of it
     loc, n = hit((s * 0.34, -1.30, 2.0), (0, 0, -1))
     if loc: fit.append(blob('hood_vent_' + str(s), (0.035, 0.17, 0.01), loc, n, M_TRIM, sink=0.4))
+
+# ---- side gills behind the front wheels, dark slats laid on the flank -----------------------
+for s_ in (-1, 1):
+    for k in range(4):
+        loc, n = hit((s_ * 2.0, -0.74 - 0.012 * k, 0.50 + 0.045 * k), (-s_, 0, 0))
+        if loc: fit.append(blob('gill', (0.075 - 0.008 * k, 0.011, 0.012), loc, n, M_TRIM, sink=0.4))
 
 # ---- tail: lamp bar, plate recess, diffuser, exhaust tips ---------------------------------
 loc, n = hit((0, 3.0, 0.72), (0, -1, 0))
