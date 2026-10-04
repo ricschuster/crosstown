@@ -26,6 +26,18 @@ PROMPTS = [
     "completely blank smooth grille and nose with no badge, no logo, no emblem, "
     "no lettering, distinctive original angular bodywork, five-spoke alloy "
     "wheels, tinted glass, sharp focus, full car in frame",
+    # 3, 4: the unbranded design again from the side and the rear, for measuring
+    # proportions against the Kestrel (#620 0b). FLUX does not hold one car across
+    # prompts, so these are a look and a stance, not drawings.
+    "studio photograph of an unbranded one-off concept sports coupe prototype in "
+    "glossy red, exact side profile view, camera level with the car, plain light "
+    "grey background, no badge, no logo, no emblem, no lettering, low wide stance, "
+    "five-spoke alloy wheels, tinted glass, sharp focus, full car in frame",
+    "studio photograph of an unbranded one-off concept sports coupe prototype in "
+    "glossy red, three-quarter rear view, plain light grey background, blank "
+    "number plate, no badge, no logo, no emblem, no lettering, wide rear track, "
+    "LED tail lamps, round exhaust tips, five-spoke alloy wheels, tinted glass, "
+    "sharp focus, full car in frame",
 ]
 
 ap = argparse.ArgumentParser()
