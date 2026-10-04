@@ -377,3 +377,13 @@ The only route that gave a better-looking car is a detailed concept image in
 that names no real car, then TRELLIS, then the wheels, glass and triangle
 count fixed in Blender, then a credits row. Untried: `1024_cascade`, other
 seeds, and a multi-view input.
+
+**First loft pass (2026-10-04):** `ROOF` peak 1.28 m to 1.13 m at t 0.43, falling
+to 0.86 at t 0.70; `BELT` and `ROOF` raised toward the front axle (fender 0.81 m
+at t 0.80, hood 0.74 m at 0.90); `WHEELZ` 1.16 to 1.23 (and the dirt plume in
+`glbcar.ts`'s `shade()`); tail 0.66 m at t 0. Haunches 7% and 5% over the body
+(were 4% and 3%) and the roof narrowed to 0.52 m, after the rear set showed a
+narrow cabin over wide haunches. The side view now sits close to `p3_s2.png`;
+seen in the game at chase distance only, not overlaid numerically, and no close
+camera exists yet. The windscreen is still short next to the reference's.
+

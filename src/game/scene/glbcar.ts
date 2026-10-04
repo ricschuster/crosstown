@@ -159,7 +159,7 @@ function shade(geometry: THREE.BufferGeometry, k: number): void {
   const rgb = new Float32Array(at.count * 3);
   const height = box.max.y - box.min.y;
   const wheelX = 0.74 * k;
-  const wheelZ = 1.16 * k;
+  const wheelZ = 1.23 * k;
   const c = new THREE.Color();
   for (let i = 0; i < at.count; i++) {
     const y = at.getY(i);
