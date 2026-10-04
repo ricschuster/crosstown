@@ -12,6 +12,11 @@ anything. This is a solo project: see [CONTRIBUTING](../CONTRIBUTING.md).
   - **Open:** #639 (merged) added `.github/workflows/auto-merge-dependabot.yml` (`pull_request_target`, never runs PR code). Untested until the
     next Dependabot PR opens: check it gets armed. Merges by github-actions start no follow-on workflows, so a second Dependabot PR
     may stay BEHIND; `@dependabot rebase` (or `recreate` if it says it was edited).
+  - **Option to explore, parked (route E):** the TRELLIS image-to-3D pilot (`docs/research/car-pilot-trellis.md`, `tools/trellis/`) is
+    not dead, only set aside for route D (scripted Blender, the Kestrel). Revisit it if the nose and flank keep stalling without a
+    reference: feed TRELLIS a detailed, unbranded concept image (local FLUX.1-schnell; check every image for real badges) for one
+    hero car, then replace its fused wheels with ours (about half a day per car). The install, models and scripts are all still in
+    place. Nothing from it ships without a credits row (ADR-0013). Owner asked on 2026-10-04 that it stay listed as an option.
   - **Not done, in order:** (1) the nose and flank barely changed: the front wing still has a visible edge at the arch and the flank
     is plain; needs a reference to measure against (owner's call); (2) soft tail, window frame, door line (plan item 5), interior
     edge-map comparison, Tier 2 of #620; (3) brake lights at night unchecked, and a faint red haze beside the right rear corner when
