@@ -71,9 +71,18 @@ def pchip(keys, x):
     return h00*ys[i] + h10*h*m[i] + h01*ys[i+1] + h11*h*m[i+1]
 
 # t runs tail (0) to nose (1). Heights in metres above the ground.
-ROOF = [(0, .66), (.025, .78), (.07, .86), (.20, .97), (.30, 1.06), (.43, 1.11), (.50, 1.08),
-        (.60, .87), (.70, .79), (.80, .77), (.90, .66), (.97, .50), (1, .42)]
+ROOF = [(0, 0.654), (0.025, 0.754), (0.07, 0.863), (0.2, 0.964), (0.3, 1.066), (0.43, 1.097), (0.5, 1.038), (0.6, 0.848), (0.7, 0.777), (0.8, 0.725), (0.9, 0.689), (0.97, 0.503), (1, 0.442)]
 BELT = [(0, .74), (.04, .84), (.15, .89), (.35, .90), (.6, .85), (.72, .80), (.8, .76), (.9, .66), (1, .44)]
+# The nose is shorter than the loft's even spacing gives: past NOSE_T the stations are packed
+# closer, so the front overhang matches the reference (0.50 m, measured with overlay.py) while the
+# cabin and the wheels stay where they are.
+NOSE_T, NOSE_SQUEEZE = 0.80, 0.80
+def y_of(t):
+    y = -(t - 0.5) * L
+    return y if t <= NOSE_T else -(NOSE_T - 0.5) * L - (t - NOSE_T) * L * NOSE_SQUEEZE
+def t_of(y):
+    y0 = -(NOSE_T - 0.5) * L
+    return 0.5 - y / L if y >= y0 else NOSE_T + (y0 - y) / (L * NOSE_SQUEEZE)
 def roof(t): return pchip(ROOF, t)
 def belt(t): return pchip(BELT, t)
 
@@ -94,8 +103,8 @@ def ring(t):
     ch = R - Bl
     cab = max(0.0, min(1.0, ch / 0.18))
     k = min(1.0, ch / 0.032)       # over the nose the roof meets the belt: scale the fixed offsets so the top points stay in order
-    gx = hw * 0.9
-    rw = gx - (gx - 0.52) * cab
+    gx = hw * 0.76
+    rw = gx - (gx - 0.40) * cab
     top = Bl + 0.03
     pts = [
         (0.0, B),
@@ -103,10 +112,10 @@ def ring(t):
         (hw * 0.96, B + 0.045),
         (hw * 1.0, B + (Bl - B) * 0.30),
         (hw * 0.925, B + (Bl - B) * 0.55),
-        (hw * 1.0, Bl - 0.085),
-        (hw * 0.90, Bl),
+        (hw * 0.88, Bl - 0.085),
+        (hw * 0.80, Bl),
         (gx, Bl + 0.012 * k),
-        (gx + (rw - gx) * 0.35, Bl + ch * 0.45),
+        (rw + (gx - rw) * 0.22, Bl + ch * 0.40),
         (rw * 1.0, Bl + ch * 0.93),
         (rw * 0.8, Bl + ch * 1.0 + 0.012 * k),
         (0.0, Bl + ch * 1.0 + 0.02 * k),
@@ -118,7 +127,7 @@ ts = [0.5 - 0.5 * math.cos(math.pi * i / N) for i in range(N + 1)]
 bm = bmesh.new()
 rings = []
 for t in ts:
-    half = ring(t); y = -(t - 0.5) * L   # nose (t=1) toward -Y
+    half = ring(t); y = y_of(t)   # nose (t=1) toward -Y
     # right side bottom->top then centre top, then left side top->bottom
     right = [(x, y, z) for x, z in half]
     left = [(-x, y, z) for x, z in reversed(half[1:-1])]
@@ -156,8 +165,7 @@ for f in bm.faces:
     if seg is None: continue
     # Dark under-body: the floor and sill everywhere, the whole lower flank
     # at the nose and tail, which reads as a splitter and a diffuser.
-    ends = t < 0.08 or t > 0.9
-    if seg in (0, 1, 21, 20) or (ends and seg in (2, 19)):
+    if seg in (0, 1, 21, 20):
         f.material_index = 1
         continue
     side = (seg in (7, 8) or seg in (13, 14)) and 0.27 < t < 0.64 and not 0.405 < t < 0.445   # a B-pillar between door and quarter glass
@@ -196,7 +204,7 @@ for v in body.data.vertices:
     # The flank is wherever the shell is near its full width. Gating on the vertex normal instead
     # let the 1 cm mesh's noisy normals switch the bump on and off vertex by vertex, which
     # rippled the fender at the nose; width is a smooth function of position.
-    hw_here = half_width(0.5 - v.co.y / L)
+    hw_here = half_width(t_of(v.co.y))
     wgt = max(0.0, min(1.0, (abs(v.co.x) / max(hw_here, 0.05) - 0.88) / 0.08)) * (1.0 if abs(v.co.y) < 2.2 else 0.0)
     if wgt > 0:
         v.co.x += wgt * flank_offset(v.co.y, v.co.z, 1 if v.co.x > 0 else -1)
@@ -225,10 +233,17 @@ for sx in (-1, 1):
 bm = bmesh.new(); bm.from_mesh(body.data)
 bm.faces.ensure_lookup_table()
 # The flat end caps are one polygon each in the loft, so the lower part of the nose and
-# tail would stay paint between the dark flank strips: darken it below the lamp line.
+# tail would stay paint between the dark flank strips: darken it below the lamp line. The
+# boundary is cut into the mesh with bisect planes first, so it is a clean line; classifying
+# whole faces left a sawtooth, whether the faces came from the loft's grid or the subdivision.
+for no, co in (((0, 0, 1), (0, 0, 0.38)), ((0, 1, 0), (0, 1.58, 0)), ((0, 1, 0), (0, -1.58, 0))):
+    geom = [e for e in bm.edges if abs(e.verts[0].co.y) > 1.2 or abs(e.verts[1].co.y) > 1.2]
+    geom = bm.verts[:] + geom + [f for f in bm.faces if abs(f.calc_center_median().y) > 1.2]
+    bmesh.ops.bisect_plane(bm, geom=geom, plane_co=co, plane_no=no, dist=1e-5)
+bm.faces.ensure_lookup_table()
 for f in bm.faces:
     c = f.calc_center_median()
-    if abs(c.y) > 1.6 and c.z < 0.45 and f.material_index == 0: f.material_index = 1
+    if abs(c.y) > 1.58 and c.z < 0.38 and f.material_index == 0: f.material_index = 1
 glass_faces = [f for f in bm.faces if f.material_index == 2]
 ng = bmesh.new()
 vmap = {}
@@ -435,18 +450,18 @@ for s in (-1, 1):
     loc, n = hit((s * 2.0, -0.62, 0.80), (-s, 0, 0))
     if loc:
         out = Vector((s, 0, 0))
-        mc = loc + out * 0.12 + Vector((0, 0.02, 0.03))
-        fit.append(box('mirror_stalk', (0.14, 0.03, 0.022), loc + out * 0.045 + Vector((0, 0.0, 0.0)), M_TRIM))
+        mc = Vector((s * 0.74, loc.y + 0.02, loc.z + 0.03))   # the reference's mirrors stand barely proud of the shoulder
+        fit.append(box('mirror_stalk', (0.09, 0.03, 0.022), Vector((s * 0.64, loc.y, loc.z)), M_TRIM))
         mr = blob('mirror_' + side, (0.045, 0.105, 0.068), mc, out, M_TRIM, sink=0.0)
         fit.append(mr)
         face = blob('mirror_face', (0.01, 0.085, 0.052), mc + Vector((0, 0.045, 0)) , Vector((0, 1, 0)), M_GLASS, sink=0.0)
         fit.append(face)
 # ---- nose: grille opening with slats, corner intakes, splitter lip, hood bulge and vents -------
-loc, n = hit((0, -3.0, 0.36), (0, 1, 0))
+loc, n = hit((0, -3.0, 0.30), (0, 1, 0))
 if loc:
     fit.append(blob('grille', (0.46, 0.05, 0.085), loc, n, M_TRIM, sink=0.7))
     for k in range(3):          # three bars across the opening, each laid on the shell
-        bl, bn = hit((0, -3.0, 0.315 + 0.045 * k), (0, 1, 0))
+        bl, bn = hit((0, -3.0, 0.255 + 0.045 * k), (0, 1, 0))
         if bl: fit.append(blob('grille_bar', (0.36, 0.02, 0.009), bl, bn, M_DISC, sink=0.2))
 for s in (-1, 1):               # small corner intakes either side of the grille
     loc, n = hit((s * 0.60, -3.0, 0.30), (0, 1, 0))
@@ -454,11 +469,11 @@ for s in (-1, 1):               # small corner intakes either side of the grille
 loc, n = hit((0, -3.0, 0.20), (0, 1, 0))
 if loc:                         # the splitter: a thin blade under the nose, proud of the bumper
     fit.append(box('splitter', (1.34, 0.17, 0.014), (0, loc.y - 0.05, CLEAR + 0.012), M_TRIM))
-loc, n = hit((0, -1.25, 2.0), (0, 0, -1))
+loc, n = hit((0, -1.05, 2.0), (0, 0, -1))
 if loc:                         # a low power bulge, painted so it repaints with the car
     bulge = blob('hood_bulge', (0.17, 0.36, 0.035), loc, n, M_PAINT, sink=0.5)
 for s in (-1, 1):               # twin vent slits either side of it
-    loc, n = hit((s * 0.34, -1.30, 2.0), (0, 0, -1))
+    loc, n = hit((s * 0.34, -1.10, 2.0), (0, 0, -1))
     if loc: fit.append(blob('hood_vent_' + str(s), (0.035, 0.17, 0.01), loc, n, M_TRIM, sink=0.4))
 
 # ---- side gills behind the front wheels, dark slats laid on the flank -----------------------
@@ -509,14 +524,14 @@ def line(a, b, k=40):
 DOWN = (0, 0, -1)
 for sd in (-1, 1):
     fit += [o for o in (
-        seam('seam_hood_side', line((sd * 0.62, -2.55, 2.0), (sd * 0.62, -0.72, 2.0)), DOWN),
+        seam('seam_hood_side', line((sd * 0.62, -1.6, 2.0), (sd * 0.62, -0.96, 2.0)), DOWN),
         seam('seam_door_f', line((sd * 2.0, -0.52, 0.36), (sd * 2.0, -0.52, 0.80)), (-sd, 0, 0), 0.006),
         seam('seam_door_r', line((sd * 2.0, 0.70, 0.36), (sd * 2.0, 0.70, 0.80)), (-sd, 0, 0), 0.006),
         seam('seam_boot_side', line((sd * 0.60, 1.62, 2.0), (sd * 0.60, 2.9, 2.0), 20), DOWN, 0.006),
     ) if o]
 fit += [o for o in (
-    seam('seam_hood_rear', line((-0.62, -0.74, 2.0), (0.62, -0.74, 2.0)), DOWN),
-    seam('seam_hood_front', line((-0.62, -2.55, 2.0), (0.62, -2.55, 2.0), 24), DOWN, 0.006),
+    seam('seam_hood_rear', line((-0.62, -0.96, 2.0), (0.62, -0.96, 2.0)), DOWN),
+    seam('seam_hood_front', line((-0.62, -1.6, 2.0), (0.62, -1.6, 2.0), 24), DOWN, 0.006),
     seam('seam_boot', line((-0.60, 1.62, 2.0), (0.60, 1.62, 2.0)), DOWN, 0.006),
 ) if o]
 

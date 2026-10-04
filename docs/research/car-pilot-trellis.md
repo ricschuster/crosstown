@@ -438,3 +438,17 @@ and a cyan ours outline on the FLUX render, and asked for ideas to get closer. O
 
 Recommended start: 1, 2 and the nose items in 5 (no judgement needed, measurable), then 4.
 Brake lights (#620 item 3) stay on the list after the shape work.
+
+**Fit, width and nose (2026-10-04, later):** `tools/cars/fitprofile.py` nudges the `ROOF` keys by the
+measured top-edge difference at each key's column (two runs; every trusted column within 3 cm, the
+mirror excluded). The nose is shortened by packing the loft stations past t 0.80 (`y_of`/`t_of`,
+`NOSE_SQUEEZE`), so overall length is 3.65 m against the reference's 3.68 m and the cabin and
+wheels did not move. `tools/cars/rearview.py` compares width over height at depths below the roof
+against `flux2/p4_s3.png` (perspective, so proportions only): the lower body already matched (1.55
+of height); the cabin was 0.2-0.3 too wide, so the shoulder, glass base and roof (half-width 0.40 m)
+were narrowed and the mirrors pulled in to x 0.74, now within 0.02 down from depth 0.3 and still
+0.13-0.19 wide at depths 0.15-0.25 (the A-pillar base and mirrors). The nose's dark lower edge is
+cut with bisect planes at z 0.38 and |y| 1.58 instead of by whole faces, which removes the sawtooth.
+Hood bulge, vents and grille moved to suit the shorter nose; the hood seams stop short of the
+windscreen. Still there from before: thin spikes at the screen corners and on the tail deck, where a
+seam ribbon's ray-cast lands on glass edges.
