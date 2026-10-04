@@ -51,7 +51,7 @@ M_TYRE = mat('tyre', (0.025, 0.025, 0.027, 1), 0.0, 0.85)
 M_RIM = mat('rim', (0.55, 0.56, 0.58, 1), 1.0, 0.3)
 M_DISC = mat('disc', (0.12, 0.12, 0.13, 1), 0.8, 0.5)
 M_CALIPER = mat('caliper', (0.7, 0.05, 0.04, 1), 0.2, 0.4)
-M_HEAD = mat('lamp_head', (0.9, 0.95, 1, 1), 0.0, 0.1, emit=(0.8, 0.9, 1, 1))
+M_HEAD = mat('lamp_head', (0.55, 0.65, 0.78, 1), 0.0, 0.1, emit=(0.8, 0.9, 1, 1))
 M_TAIL = mat('lamp_tail', (0.9, 0.05, 0.03, 1), 0.0, 0.2, emit=(1, 0.05, 0.02, 1))
 M_CHROME = mat('chrome', (0.8, 0.8, 0.82, 1), 1.0, 0.2)
 M_PLATE = mat('plate', (0.85, 0.85, 0.8, 1), 0.0, 0.5)
@@ -374,7 +374,7 @@ def end_round(u):
     """Rounds both ends of a lamp outline to a point, so it reads as an almond and not a slab."""
     return math.sqrt(max(0.0, 1 - abs(2 * u - 1) ** 6))
 
-def lamp_solid(name, material, origin_y, dirn, x0, x1, zc, half_h, s, pad=0.0, front=0.0, dome=0.0, depth=0.08):
+def lamp_solid(name, material, origin_y, dirn, x0, x1, zc, half_h, s, pad=0.0, front=0.0, dome=0.0, depth=0.08, along_ray=False):
     """A closed lamp-shaped solid. Its front face is a grid over (x, z), each point ray-cast onto
     the shell and moved `front` out along the normal (negative is recessed) plus a dome; its back
     is flat, `depth` further in. Used three times per lamp: a cutter that opens a pocket in the
@@ -389,7 +389,10 @@ def lamp_solid(name, material, origin_y, dirn, x0, x1, zc, half_h, s, pad=0.0, f
             z = zc(u) + v * (half_h(u) + pad) * e
             loc, n = hit((x, origin_y, z), dirn)
             if not loc: raise RuntimeError(f'{name}: no surface at {x:.2f}, {z:.2f}')
-            out = loc + n * (front + dome * math.sqrt(max(0.0, 1 - v * v)) * e)
+            if along_ray:     # a cutter must keep its x, z footprint, or a sloping nose shifts the opening
+                out = loc - Vector(dirn) * front
+            else:
+                out = loc + n * (front + dome * math.sqrt(max(0.0, 1 - v * v)) * e)
             back = Vector((out.x, loc.y + dirn[1] * depth, out.z))
             row.append((bmx.verts.new(out), bmx.verts.new(back)))
         grid.append(row)
@@ -412,11 +415,12 @@ def lamp_solid(name, material, origin_y, dirn, x0, x1, zc, half_h, s, pad=0.0, f
 
 pockets = []        # cutters, applied to the body once every fitting is placed
 def lamp(name, lens_mat, origin_y, dirn, x0, x1, zc, half_h, s):
-    cut = lamp_solid(name + '_cut', M_TRIM, origin_y, dirn, x0, x1, zc, half_h, s, pad=0.010, front=0.05, depth=0.11)
+    """Pocket, bezel and lens. The lens is as deep as the pocket, so on a sloping nose it fills it
+    and no cut wall shows (a shallow lens in a deep pocket was a black hole with a white sliver)."""
+    cut = lamp_solid(name + '_cut', M_TRIM, origin_y, dirn, x0, x1, zc, half_h, s, pad=0.010, front=0.05, depth=0.11, along_ray=True)
     pockets.append(cut)
-    liner = lamp_solid(name + '_liner', M_TRIM, origin_y, dirn, x0, x1, zc, half_h, s, pad=0.008, front=-0.025, depth=0.02)
-    fit.append(liner)
-    return lamp_solid(name, lens_mat, origin_y, dirn, x0, x1, zc, half_h, s, pad=0.0, front=-0.012, dome=0.02, depth=0.05)
+    fit.append(lamp_solid(name + '_bezel', M_TRIM, origin_y, dirn, x0, x1, zc, half_h, s, pad=0.009, front=0.002, depth=0.11))
+    return lamp_solid(name, lens_mat, origin_y, dirn, x0, x1, zc, half_h, s, pad=0.0, front=0.005, dome=0.012, depth=0.11)
 
 fit = []
 for s in (-1, 1):
@@ -424,10 +428,6 @@ for s in (-1, 1):
     # headlamps: an almond swept up from the nose toward the crest of the wing
     fit.append(lamp('lamp_head_' + side, M_HEAD, -3.0, (0, 1, 0), 0.38, 0.65,
                     lambda u: 0.60 + 0.07 * u, lambda u: 0.046 - 0.018 * u, s))
-    # a projector in the inboard end of each headlamp: a chrome ring round a dark lens
-    for r_, mt_, off_ in ((0.036, M_CHROME, 0.0), (0.026, M_TRIM, 0.006)):
-        loc, n = hit((s * 0.49, -3.0, 0.61), (0, 1, 0))
-        if loc: fit.append(blob('projector', (r_, r_, 0.01), loc + n * (0.012 + off_), n, mt_, sink=0.0))
     # tail lamps: a wide thin almond hooked down at the outer corner
     fit.append(lamp('lamp_tail_' + side, M_TAIL, 3.0, (0, -1, 0), 0.13, 0.74,
                     lambda u: 0.80 - 0.05 * u * u, lambda u: 0.050 - 0.018 * u, s))
