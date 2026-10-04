@@ -25,7 +25,7 @@ L = 3.7            # overall length
 HW = 0.86          # body half-width
 CLEAR = 0.15       # ground clearance
 TYRE_R = 0.315
-WHEELZ = 1.16      # hub distance from centre, fore and aft
+WHEELZ = 1.23      # hub distance from centre, fore and aft
 WHEEL_X = 0.74     # hub x
 TYRE_W = 0.22
 PAINT = (0.62, 0.07, 0.04, 1)
@@ -71,9 +71,9 @@ def pchip(keys, x):
     return h00*ys[i] + h10*h*m[i] + h01*ys[i+1] + h11*h*m[i+1]
 
 # t runs tail (0) to nose (1). Heights in metres above the ground.
-ROOF = [(0, .70), (.025, .88), (.07, .93), (.20, 1.02), (.32, 1.15), (.44, 1.27), (.54, 1.28),
-        (.62, 1.18), (.71, .90), (.80, .74), (.90, .66), (.97, .54), (1, .46)]
-BELT = [(0, .78), (.04, .92), (.15, .95), (.35, .93), (.6, .88), (.75, .84), (.9, .72), (1, .55)]
+ROOF = [(0, .66), (.025, .80), (.07, .88), (.20, 1.00), (.30, 1.09), (.43, 1.13), (.50, 1.10),
+        (.60, .97), (.70, .86), (.80, .81), (.90, .74), (.97, .60), (1, .50)]
+BELT = [(0, .74), (.04, .86), (.15, .91), (.35, .92), (.6, .88), (.72, .83), (.8, .80), (.9, .74), (1, .58)]
 def roof(t): return pchip(ROOF, t)
 def belt(t): return pchip(BELT, t)
 
@@ -81,7 +81,7 @@ def half_width(t):
     u = abs(2 * t - 1)
     e = max(0.0, min(1.0, (u - 0.76) / 0.24))
     h = HW * (1 - e ** 2.8) ** 0.5
-    return h * (1 + 0.04 * math.exp(-(((t - 0.17) / 0.09) ** 2)) + 0.03 * math.exp(-(((t - 0.80) / 0.09) ** 2)))   # rear haunch
+    return h * (1 + 0.07 * math.exp(-(((t - 0.17) / 0.09) ** 2)) + 0.05 * math.exp(-(((t - 0.80) / 0.09) ** 2)))   # rear haunch
 
 def bottom(t):
     u = abs(2 * t - 1)
@@ -94,7 +94,7 @@ def ring(t):
     ch = R - Bl
     cab = max(0.0, min(1.0, ch / 0.18))
     gx = hw * 0.9
-    rw = gx - (gx - 0.56) * cab
+    rw = gx - (gx - 0.52) * cab
     top = Bl + 0.03
     pts = [
         (0.0, B),
