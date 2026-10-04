@@ -58,7 +58,7 @@ function lacquer(): THREE.MeshPhysicalMaterial {
   // Wear (#620 2d): 0 is a clean coat, 1 is a wreck. The view sets it from the sim's damage.
   const wear = { value: 0 };
   const material = new THREE.MeshPhysicalMaterial({
-    roughness: 0.5, metalness: 0.12, envMapIntensity: 0.5, clearcoat: 0.5, clearcoatRoughness: 0.08,
+    roughness: 0.42, metalness: 0.12, envMapIntensity: 0.7, clearcoat: 0.8, clearcoatRoughness: 0.08,
     vertexColors: true, name: 'paint',
   });
   material.userData.wear = wear;
@@ -132,11 +132,11 @@ export function wearPaint(material: THREE.Material, hurt: number): void {
   const wear = material.userData.wear as { value: number } | undefined;
   if (!wear) return;
   wear.value = hurt;
-  (material as THREE.MeshPhysicalMaterial).clearcoat = 0.5 * (1 - 0.6 * hurt);
+  (material as THREE.MeshPhysicalMaterial).clearcoat = 0.8 * (1 - 0.6 * hurt);
 }
 
 /** How dirty a car comes: 0 is showroom, 1 is a car that has lived in the city. */
-const DIRT = 1;
+const DIRT = 0.45;
 const GRIME = new THREE.Color('#7a6a58');
 
 /**
@@ -159,7 +159,7 @@ function shade(geometry: THREE.BufferGeometry, k: number): void {
   const rgb = new Float32Array(at.count * 3);
   const height = box.max.y - box.min.y;
   const wheelX = 0.74 * k;
-  const wheelZ = 1.16 * k;
+  const wheelZ = 1.23 * k;
   const c = new THREE.Color();
   for (let i = 0; i < at.count; i++) {
     const y = at.getY(i);
@@ -176,7 +176,7 @@ function shade(geometry: THREE.BufferGeometry, k: number): void {
     const dust = THREE.MathUtils.smoothstep(normal ? normal.getY(i) : 0, 0.75, 1);
     const dirt = Math.min(1, (0.55 * low + 0.5 * spray + 0.22 * dust) * DIRT);
     // The bake's occlusion is sharp (a crevice is nearly black); a car is never that dark in daylight.
-    const v = (0.35 + 0.65 * light) * (1 + 0.3 * crown);
+    const v = (0.5 + 0.5 * light) * (1 + 0.3 * crown);
     c.set(1, 1, 1).lerp(GRIME, dirt * 0.75).multiplyScalar(v * (1 - 0.18 * dirt));
     rgb.set([c.r, c.g, c.b], i * 3);
   }
