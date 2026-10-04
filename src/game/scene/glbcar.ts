@@ -136,7 +136,7 @@ export function wearPaint(material: THREE.Material, hurt: number): void {
 }
 
 /** How dirty a car comes: 0 is showroom, 1 is a car that has lived in the city. */
-const DIRT = 1;
+const DIRT = 0.45;
 const GRIME = new THREE.Color('#7a6a58');
 
 /**
@@ -176,7 +176,7 @@ function shade(geometry: THREE.BufferGeometry, k: number): void {
     const dust = THREE.MathUtils.smoothstep(normal ? normal.getY(i) : 0, 0.75, 1);
     const dirt = Math.min(1, (0.55 * low + 0.5 * spray + 0.22 * dust) * DIRT);
     // The bake's occlusion is sharp (a crevice is nearly black); a car is never that dark in daylight.
-    const v = (0.35 + 0.65 * light) * (1 + 0.3 * crown);
+    const v = (0.5 + 0.5 * light) * (1 + 0.3 * crown);
     c.set(1, 1, 1).lerp(GRIME, dirt * 0.75).multiplyScalar(v * (1 - 0.18 * dirt));
     rgb.set([c.r, c.g, c.b], i * 3);
   }
