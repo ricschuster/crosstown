@@ -6,7 +6,7 @@ anything. This is a solo project: see [CONTRIBUTING](../CONTRIBUTING.md).
 - **Update (2026-10-04, later): owner has driven the new Kestrel; order is colour, brake lights, close-up camera and realism, damage staging (#620, #584).**
   - **Owner's feedback:** the car colour is too dull (more vibrant); damage is
     not obvious enough at full damage (later); wants the model more realistic,
-    **at close-up as well as chase distance**. Order agreed: (1) colour,
+    **at close-up as well as chase distance**. Order agreed: (1) colour, (1b) a shape pass (the owner thinks the shape looks fake; #620 item 0b),
     (2) brake lights, (3) a close-up camera, then the realism pass (lamps,
     interior, glass, wheels, fine detail), (4) staged damage as a new Tier 2
     item. #620 is updated to match (new item 0, "Colour", and two Tier 2 items).
