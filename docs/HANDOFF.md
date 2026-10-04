@@ -4,7 +4,7 @@ Where the project stands, so a fresh session can pick it up without re-deriving
 anything. This is a solo project: see [CONTRIBUTING](../CONTRIBUTING.md).
 
 - **Update (2026-10-04, night): colour fix and shape pass done, lamps and mirrors next (#620 items 0 and 0b, #584).**
-  PR #622 holds everything (colour, shape, toy-look pass). Details are in the last
+  PR #623 holds everything (colour, shape, toy-look pass; #622 merged early and stranded them, so they were re-sent). Details are in the last
   three entries of [docs/research/car-pilot-trellis.md](research/car-pilot-trellis.md).
   - **Colour (`a450786`):** `DIRT` 0.45, occlusion floor `0.5 + 0.5 * light`, and
     `CarPool.place` multiplies the lacquer paint's saturation by 1.2 to give back
