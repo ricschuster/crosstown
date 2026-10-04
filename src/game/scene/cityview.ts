@@ -19,8 +19,8 @@ import { CAR_PAINT } from './carshape';
 import { makeGradePass, setGradeHour } from './grade';
 import { DEFAULT_LOOK, type Look } from './look';
 import { Cityscape } from './cityscape';
-import { loadKestrelModel, wearPaint } from './glbcar';
-import { makeCar, CarPool, COP_BODY, trafficBody, setHalos } from './cars';
+import { compensateForGrade, loadKestrelModel, wearPaint } from './glbcar';
+import { makeCar, CarPool, COP_BODY, trafficBody, setBrakeLights, setHalos } from './cars';
 import { CityTrucks } from './trucks';
 import { RouteLines } from './routelines';
 import { carById, type CarBody } from '../cars';
@@ -843,6 +843,7 @@ export class CityView {
       paint.set(world.paint);
       const hurt = Math.max(0, (wear - DAMAGE_FREE) / (1 - DAMAGE_FREE));
       paint.lerp(new THREE.Color('#4a4038'), hurt * 0.7);
+      if ((body.material as THREE.Material).userData.wear) compensateForGrade(paint);
       wearPaint(body.material as THREE.Material, hurt);
       this.car.scale.setScalar(world.car.scale);
     }
@@ -942,6 +943,9 @@ export class CityView {
     ]) {
       pool.setNight(this.lamps);
     }
+    // Brake lights: the pedal down while rolling forward. Held at a standstill
+    // it is reverse or a burnout, and a reversing car does not show red.
+    setBrakeLights(this.car, input.down && !input.up && world.speed > 1);
     this.setCarNight(this.car, this.lamps);
 
     // The gate stands at the next checkpoint, so the route is something you

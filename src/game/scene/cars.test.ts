@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import { makeCar, CarPool } from './cars';
+import { makeCar, CarPool, setBrakeLights, setHalos } from './cars';
 
 /**
  * Headlights (#221).
@@ -95,5 +95,38 @@ describe('a pool of cars at night', () => {
     const cars = scene.children.filter((c) => c.type === 'Group');
     const beams = cars.map((c) => (c.getObjectByName('beam') as THREE.Mesh).visible);
     expect(beams.filter(Boolean)).toHaveLength(1);
+  });
+});
+
+describe('brake lights', () => {
+  // An authored car needs the .glb, so this stands in for one: a tail lens and its halo.
+  const stand = () => {
+    const car = new THREE.Group();
+    const lens = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: '#b8301f' }));
+    lens.name = 'lamp_tail_l';
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ opacity: 0 }));
+    halo.name = 'halo';
+    halo.userData.strength = 0.55;
+    halo.userData.tail = true;
+    car.add(lens, halo);
+    return { car, lens, halo };
+  };
+
+  it('light the tail halo by day and put it out again', () => {
+    const { car, halo } = stand();
+    setBrakeLights(car, true);
+    setHalos(car, 0);
+    expect(halo.visible).toBe(true);
+    expect(halo.material.opacity).toBeGreaterThan(0.5);
+    setBrakeLights(car, false);
+    setHalos(car, 0);
+    expect(halo.visible).toBe(false);
+  });
+
+  it('brighten the lens', () => {
+    const { car, lens } = stand();
+    const before = (lens.material as THREE.MeshBasicMaterial).color.getHex();
+    setBrakeLights(car, true);
+    expect((lens.material as THREE.MeshBasicMaterial).color.getHex()).not.toBe(before);
   });
 });
