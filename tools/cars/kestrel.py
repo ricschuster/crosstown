@@ -357,19 +357,6 @@ def seam(name, pts, direction, width=0.007, lift=0.0015):
     o = bpy.data.objects.new(name, m); scene.collection.objects.link(o)
     return o
 
-fit = []
-for s in (-1, 1):
-    # headlamps: low on the nose, swept back toward the wing
-    loc, n = hit((s * 0.62, -3.0, 0.50), (0, 1, 0))
-    if loc: fit.append(blob('bezel_h' + str(s), (0.215, 0.058, 0.03), loc, n, M_TRIM, sink=0.75))
-    if loc: fit.append(blob('lamp_head_l' if s < 0 else 'lamp_head_r', (0.19, 0.045, 0.035), loc, n, M_HEAD, sink=0.6))
-    loc, n = hit((s * 0.42, 3.0, 0.78), (0, -1, 0))
-    if loc: fit.append(blob('bezel_t' + str(s), (0.23, 0.056, 0.04), loc, n, M_TRIM, sink=0.75))
-    if loc: fit.append(blob('lamp_tail_l' if s < 0 else 'lamp_tail_r', (0.2, 0.04, 0.045), loc, n, M_TAIL, sink=0.6))
-    loc, n = hit((s * 2.0, -0.55, 0.95), (-s, 0, 0))
-    if loc:
-        mr = blob('mirror_l' if s < 0 else 'mirror_r', (0.11, 0.07, 0.06), loc, n, M_TRIM, sink=-0.8)
-        fit.append(mr)
 def box(name, size, loc, material, rot=(0, 0, 0)):
     """A flat-shaded box centred on `loc`; `size` is the full extent in x, y, z."""
     bpy.ops.mesh.primitive_cube_add(size=1)
@@ -378,6 +365,58 @@ def box(name, size, loc, material, rot=(0, 0, 0)):
     o.data.materials.append(material)
     return o
 
+def lens(name, material, origin_y, dirn, x0, x1, zc, half_h, dome, lift, s):
+    """A lamp laid on the shell as a swept lens: a grid over (x, z) whose outline is
+    `zc(u)` (centre line) and `half_h(u)` (half height), u 0 at the inboard end and 1 at the
+    outboard one, each point ray-cast onto the shell and lifted by a domed `dome` * (1 - v^2).
+    A sliver that follows the wing is what a lamp is; an ellipsoid is a blob."""
+    bmx = bmesh.new(); grid = []
+    nu, nv = 14, 6
+    for i in range(nu + 1):
+        u = i / nu; row = []
+        for j in range(nv + 1):
+            v = -1 + 2 * j / nv
+            x = s * (x0 + (x1 - x0) * u)
+            z = zc(u) + v * half_h(u)
+            loc, n = hit((x, origin_y, z), dirn)
+            if not loc: row.append(None); continue
+            bulge = lift + dome * math.sqrt(max(0.0, 1 - v * v)) * math.sin(math.pi * min(1.0, 0.1 + 0.9 * (1 - abs(2 * u - 1) ** 2)))
+            row.append(bmx.verts.new(loc + n * bulge))
+        grid.append(row)
+    for r0, r1 in zip(grid, grid[1:]):
+        for j in range(nv):
+            q = (r0[j], r1[j], r1[j + 1], r0[j + 1])
+            if all(q): bmx.faces.new(q if s > 0 else q[::-1])
+    bmesh.ops.recalc_face_normals(bmx, faces=bmx.faces)
+    m = bpy.data.meshes.new(name); bmx.to_mesh(m); bmx.free()
+    m.materials.append(material)
+    o = bpy.data.objects.new(name, m); scene.collection.objects.link(o)
+    for p_ in m.polygons: p_.use_smooth = True
+    return o
+
+fit = []
+for s in (-1, 1):
+    side = 'l' if s < 0 else 'r'
+    # headlamps: a slim lens swept back and up toward the wing, in a dark bezel
+    hz = lambda u: 0.50 + 0.07 * u
+    hh = lambda u: 0.058 - 0.030 * u
+    fit.append(lens('bezel_h' + str(s), M_TRIM, -3.0, (0, 1, 0), 0.40, 0.86, lambda u: hz(u) + 0.004, lambda u: hh(u) + 0.014, 0.006, 0.002, s))
+    fit.append(lens('lamp_head_' + side, M_HEAD, -3.0, (0, 1, 0), 0.43, 0.83, hz, hh, 0.014, 0.006, s))
+    # tail lamps: a wide, thin lens hooked down at the outer corner
+    tz = lambda u: 0.79 - 0.05 * u * u
+    th = lambda u: 0.052 - 0.020 * u
+    fit.append(lens('bezel_t' + str(s), M_TRIM, 3.0, (0, -1, 0), 0.10, 0.84, lambda u: tz(u) + 0.003, lambda u: th(u) + 0.012, 0.006, 0.002, s))
+    fit.append(lens('lamp_tail_' + side, M_TAIL, 3.0, (0, -1, 0), 0.13, 0.81, tz, th, 0.014, 0.006, s))
+    # mirrors: a stalk off the sill of the A-pillar and a flat housing with a dark face
+    loc, n = hit((s * 2.0, -0.62, 0.80), (-s, 0, 0))
+    if loc:
+        out = Vector((s, 0, 0))
+        mc = loc + out * 0.12 + Vector((0, 0.02, 0.03))
+        fit.append(box('mirror_stalk', (0.14, 0.03, 0.022), loc + out * 0.045 + Vector((0, 0.0, 0.0)), M_TRIM))
+        mr = blob('mirror_' + side, (0.045, 0.105, 0.068), mc, out, M_TRIM, sink=0.0)
+        fit.append(mr)
+        face = blob('mirror_face', (0.01, 0.085, 0.052), mc + Vector((0, 0.045, 0)) , Vector((0, 1, 0)), M_GLASS, sink=0.0)
+        fit.append(face)
 # ---- nose: grille opening with slats, corner intakes, splitter lip, hood bulge and vents -------
 loc, n = hit((0, -3.0, 0.36), (0, 1, 0))
 if loc:
