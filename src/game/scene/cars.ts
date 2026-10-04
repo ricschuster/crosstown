@@ -163,6 +163,7 @@ function addLampHalos(car: THREE.Group): void {
     );
     halo.name = 'halo';
     halo.userData.strength = head ? 0.8 : 0.55;
+    halo.userData.tail = !head;
     halo.position.copy(box.getCenter(new THREE.Vector3())).add(lamp.position);
     const size = (box.max.x - box.min.x) * (head ? 1.9 : 1.6) + BODY_W * 0.04;
     halo.scale.set(size, size * 0.7, 1);
@@ -171,12 +172,38 @@ function addLampHalos(car: THREE.Group): void {
   }
 }
 
-/** Fade a car's lamp halos with the night. */
+/**
+ * Fade a car's lamp halos with the night. A tail halo is also lit by the brake
+ * (`setBrakeLights`), which shows by day as well: it is the one signal a chase
+ * camera gets of what the car in front is doing.
+ */
 export function setHalos(car: THREE.Object3D, lit: number): void {
+  const brake = (car.userData.brake as number | undefined) ?? 0;
   for (const part of car.children) {
     if (part.name !== 'halo') continue;
-    (part as THREE.Sprite).material.opacity = lit * (part.userData.strength as number);
-    part.visible = lit > 0.02;
+    const strength = part.userData.strength as number;
+    const glow = part.userData.tail ? Math.max(lit * strength, brake * BRAKE_HALO) : lit * strength;
+    (part as THREE.Sprite).material.opacity = glow;
+    part.visible = glow > 0.02;
+  }
+}
+
+/** Tail lens on a lit car, and braking: the second is the brighter. */
+const TAIL_RUNNING = '#b8301f';
+const TAIL_BRAKING = '#ff5a44';
+const BRAKE_HALO = 0.85;
+
+/**
+ * Brake lights on an authored car: the lens brightens and the tail halos come
+ * on, day or night. Read-only from the view's side, the sim never hears of it.
+ * Procedural bodies have no named tail lamps and are left as they are.
+ */
+export function setBrakeLights(car: THREE.Object3D, on: boolean): void {
+  if (!!car.userData.brake === on) return;
+  car.userData.brake = on ? 1 : 0;
+  for (const part of car.children) {
+    if (!/^lamp_tail/.test(part.name) && part.name !== 'tail_bar') continue;
+    ((part as THREE.Mesh).material as THREE.MeshBasicMaterial).color.set(on ? TAIL_BRAKING : TAIL_RUNNING);
   }
 }
 

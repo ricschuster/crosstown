@@ -246,7 +246,7 @@ export function kestrelParts(): THREE.Mesh[] | null {
         part.material = new THREE.MeshBasicMaterial({ color: '#6f7481' });
         part.name = 'headlight';
       } else if (name.startsWith('lamp_tail') || name === 'tail_bar') {
-        part.material = new THREE.MeshBasicMaterial({ color: '#ff4a38' });
+        part.material = new THREE.MeshBasicMaterial({ color: '#b8301f' });
       }
       out.push(part);
     }

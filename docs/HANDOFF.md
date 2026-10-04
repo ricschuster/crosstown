@@ -3,6 +3,36 @@
 Where the project stands, so a fresh session can pick it up without re-deriving
 anything. This is a solo project: see [CONTRIBUTING](../CONTRIBUTING.md).
 
+- **Update (2026-10-04, Sunday morning, after a crash): brake lights written, studio render done, salmon investigation under way (#620, #584).**
+  - **State of the branches:** #626 (profile fit, width, nose) merged. #627 (`kestrel-reflections`: env probe gets a dark
+    ground and a skyline, `tools/cars/studio.py`, cityshot wait 90 s) was open and BLOCKED on CI at handoff. The brake-light work
+    is committed on top of it locally and pushed as `kestrel-brake-lights-wip` (no PR yet, so #627 cannot carry it by accident).
+  - **Brake lights (#620 item 3), done but only unit-tested:** `setBrakeLights` in `scene/cars.ts` (lens colour
+    `TAIL_RUNNING` to `TAIL_BRAKING`, tail halos lit by `BRAKE_HALO`, day or night, `setHalos` reads `car.userData.brake`);
+    `CityView` calls it with `input.down && !input.up && world.speed > 1` (read-only, sim untouched). Tail lens base colour in
+    `glbcar.ts` is now dim `#b8301f`. Authored Kestrel only; traffic and procedural bodies have no named tail lamps. Owner has
+    NOT yet seen it braking in game. Full `npm run test` not run since. `cars.test.ts` has two new tests.
+  - **Studio renders** (`tools/cars/studio.py`, `NODENOISE=1` skips the denoiser, which crashed Blender on two of three views):
+    `~/Pictures/crosstown-compare/studio/side.png`, `front34.png`, `rear34.png`. In the studio the paint is a deep saturated red
+    with real highlights and a dark lower flank; in game the same car is a flat salmon. So **the game's lighting, not the model,
+    is the main reason it looks bland.** Model faults still visible: lumpy nose in the front 3/4, flat flank slab, thin stray
+    vertical lines above the mirrors and at the door, soft tail.
+  - **Salmon investigation (in progress):** suspects, most likely first: (1) sky reflection washing the clear coat
+    (`envMapIntensity` 0.7, the PMREM probe in `cityview.ts`, which the #627 probe change only helps on side-facing
+    surfaces); (2) the colour grade and fill light lowering contrast (`scene/grade.ts` takes 16% saturation, `CarPool.place`
+    gives back 1.2x); (3) vertex-baked light only, little contact shadow; (4) distance haze; (5) chase camera far and dead behind.
+    Method: one fixed `cityshot --view drive` shot (`LOOK=env,pbr,materials,trees,particles,clutter,buildings,models`), then vary
+    one thing at a time (paint `envMapIntensity` 0 vs 0.7, grade on or off for the car, fog on or off) and compare against `studio/rear34.png`.
+  - **Look flags trap:** `?look=` REPLACES the set; `models` is the only switch off by default, so `?look=models` alone turns
+    env, pbr, materials, trees, buildings and particles off and gives the plain city. Use the full list above, or none of it
+    plus a fix (a `+models` additive form was offered, owner has not chosen). The Kestrel only shows when the garage car is the
+    fastback body (the owner's car was not selected at first).
+  - **Continue with this prompt:**
+    > Continue the Kestrel salmon investigation (#620, #584). Read docs/HANDOFF.md (the Sunday-morning entry). Find what turns the
+    > studio's deep red into the game's salmon by varying one factor at a time on a fixed drive shot, fix the biggest, and show
+    > before and after next to `~/Pictures/crosstown-compare/studio/rear34.png`. Then check brake lights in game, run
+    > `npm run typecheck` and `npm run test`, open a PR from `kestrel-brake-lights-wip`. Then the stray lines and lumpy nose in
+    > `tools/cars/kestrel.py`. Original and unbranded; sim untouched; never pkill -f broadly; check whether #627 merged before pushing.
 - **Update (2026-10-04, late night): lamps, mirrors and side-view overlay done; closing the gap to the reference next (#620, #584).**
   PRs #624 (lamps, mirrors, fender ripple) merged; #625 (overlay tools, hood and windscreen lowered) was open at handoff,
   check `git log origin/main` before assuming. #625 is branch `kestrel-side-overlay` (overlay tools, ROOF/BELT lowered, lamps at the nose corner, plan and this handoff); its merge state was BLOCKED (waiting on CI) at handoff, so check `gh pr view 625`, and if it merged without the handoff commit, re-send that commit with `rebase --onto origin/main`. Both were squash-merged before the last commit each time, so
