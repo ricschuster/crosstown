@@ -1,0 +1,30 @@
+name: Enable auto-merge (Dependabot)
+
+# auto-merge.yml arms only ricschuster's PRs, through a PAT that Dependabot's
+# runs cannot read (its secrets are a separate store). Dependabot's PRs
+# therefore sat open until armed by hand (#629-#635).
+#
+# pull_request_target gives a write token to a Dependabot run. It is safe here
+# because nothing in this job checks out or runs the PR's code: it only asks
+# GitHub to merge the PR once the required check ("build") passes, the same
+# gate as any other PR. The merge is made by github-actions, so it starts no
+# follow-on workflows; update-branches.yml still runs when any other PR lands.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  enable-auto-merge:
+    if: github.actor == 'dependabot[bot]' && !github.event.pull_request.draft
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Enable auto-merge
+        run: gh pr merge --auto --squash "${{ github.event.pull_request.number }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
