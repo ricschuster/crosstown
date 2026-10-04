@@ -19,7 +19,7 @@ import { CAR_PAINT } from './carshape';
 import { makeGradePass, setGradeHour } from './grade';
 import { DEFAULT_LOOK, type Look } from './look';
 import { Cityscape } from './cityscape';
-import { loadKestrelModel } from './glbcar';
+import { loadKestrelModel, wearPaint } from './glbcar';
 import { makeCar, CarPool, COP_BODY, trafficBody, setHalos } from './cars';
 import { CityTrucks } from './trucks';
 import { RouteLines } from './routelines';
@@ -843,6 +843,7 @@ export class CityView {
       paint.set(world.paint);
       const hurt = Math.max(0, (wear - DAMAGE_FREE) / (1 - DAMAGE_FREE));
       paint.lerp(new THREE.Color('#4a4038'), hurt * 0.7);
+      wearPaint(body.material as THREE.Material, hurt);
       this.car.scale.setScalar(world.car.scale);
     }
     if (held('look', 'b')) this.director.glanceBack();

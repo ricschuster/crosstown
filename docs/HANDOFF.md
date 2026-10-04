@@ -3,6 +3,54 @@
 Where the project stands, so a fresh session can pick it up without re-deriving
 anything. This is a solo project: see [CONTRIBUTING](../CONTRIBUTING.md).
 
+- **Update (2026-10-04): Kestrel nose, tail and paint done; brake lights then Tier 2 next (#620, #584).**
+  The owner asked to improve the Kestrel further; the plan is issue **#620**
+  (checkboxes, Tier 1 then Tier 2). Read it, then the "Nose and tail" and
+  "Paint" entries in [docs/research/car-pilot-trellis.md](research/car-pilot-trellis.md).
+  - **Done and merged:** nose (grille bars, corner intakes, splitter, hood
+    bulge and vents) and tail (plate recess, diffuser, round exhaust tips);
+    paint 2a clear coat plus flake (`lacquer()` in `scene/glbcar.ts`), 2b baked
+    occlusion and edge light (`bake_light()` in `tools/cars/kestrel.py`), 2c
+    physical dirt (`shade()`, one knob `DIRT`), 2d damage wear (`wearPaint()`
+    called from the view's wear block, sim untouched), 2e reflective glass and
+    matte trim.
+  - **Next, owner's order:** Tier 1 item 3, **brake lights** (the view must read
+    the sim's brake, read-only; tail lamps and the halos from `addLampHalos`
+    brighten on braking, day and night). Then Tier 2 in #620. The body-style kit
+    and making `models` a default look stay parked (HANDOFF "end of night 2").
+    **The owner said not to worry about the triangle budget for now.**
+  - **Lessons that will bite again:** a part that must take the car's colour has
+    to be joined into `a_body` in Blender (the loader repaints only that mesh; a
+    separate painted part rendered white in game while Blender looked fine); a
+    strongly metallic base with a hard coat washes red and white out to pink,
+    keep the base near 12% metallic; `patch` is a reserved word in GLSL; a mesh
+    without the bake's colour attribute must not ask for vertex colours or it
+    draws black; the scuff noise is skipped at zero wear, which also made the
+    software-rendered night shot stop timing out. **Always look in the game, not
+    just the Blender preview.**
+  - **How I looked:** a throwaway Playwright script (not committed): start vite,
+    open `/?look=<all defaults>,models`, respray through
+    `crosstown.world.resprays.set(world.car.id, '#hex')`, set
+    `crosstown.world.damage`, wrap `crosstown.view.director.update` to pull the
+    camera in with `position.lerp(target, 0.45)` (0.7 puts it inside the car),
+    clip the screenshot. Each shot takes about a minute in SwiftShader; pass
+    `timeout` to `page.screenshot`. `cityshot` still fails about every other
+    launch; rerun.
+  - **Dev server:** one on port 5190 serves the old working directory
+    (`handoff-trellis-pilot`, which has all of this); stop it by PID only, never
+    `pkill -f`.
+  - **Continue with this prompt:**
+    > Continue the Kestrel improvements (issue #620, car pilot #584). Read
+    > docs/HANDOFF.md (the 2026-10-04 entry), issue #620 and
+    > docs/research/car-pilot-trellis.md (Nose and tail, Paint) first. Tier 1
+    > items 1 and 2 are done; do item 3, brake lights: the view reads the sim's
+    > brake read-only and the tail lamps and halos brighten on braking, day and
+    > night (look at `addLampHalos`/`setHalos` in scene/cars.ts and
+    > `CarPool.setNight`). Then work down Tier 2 in #620, ticking boxes as you
+    > go. Triangle budget is not a concern yet. Look at every change in the game
+    > (cityshot, or a throwaway Playwright script as the entry describes), never
+    > only in Blender. Original and unbranded; sim untouched; npm run typecheck
+    > and npm run test before a PR; never pkill -f broadly.
 - **Update (2026-10-03, end of night 2): car pilot passes 3 and 4 done, kit is next (#584).**
   On top of the route D entry below (read it for the pipeline and the gotchas):
   - **Pass 3, detail (`952f3b9`):** shut lines as ray-cast ribbons (`seam()`),
