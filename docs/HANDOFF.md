@@ -3,7 +3,29 @@
 Where the project stands, so a fresh session can pick it up without re-deriving
 anything. This is a solo project: see [CONTRIBUTING](../CONTRIBUTING.md).
 
-- **SESSION END (2026-10-04, Sunday): #627 merged; brake lights and the paint compensation wait on branch `kestrel-brake-lights-wip`; next is the saturation-aware grade lift (#620, #584).**
+- **SESSION END (2026-10-04, Sunday evening): brake lights, grade fade, bezel fix and shut-line fix all on `main`; Dependabot auto-merge PR #639 open (#620, #584).**
+  - **Merged today:** #636 (brake lights, `compensateForGrade`, and `GRADE.veilFade` in `scene/grade.ts`: the lift and the golden-hour
+    veil fade on saturated pixels, so the Kestrel is red not salmon; owner approved the look), #637 (lamp bezels are trim, matched by
+    exact name `lamp_(head|tail)_[lr]`, which was the "halo smear"), #638 (shut lines ray-cast against `body` not the stale depsgraph,
+    which held the spoiler as a 2 m cube: those were the stray lines; deeper door scoop, nose smoothing pass), and the Dependabot
+    backlog #629-#635 (armed by hand). Branch `kestrel-brake-lights-wip` is dead, delete it.
+  - **Open:** #639 adds `.github/workflows/auto-merge-dependabot.yml` (`pull_request_target`, never runs PR code). Untested until the
+    next Dependabot PR opens: check it gets armed. Merges by github-actions start no follow-on workflows, so a second Dependabot PR
+    may stay BEHIND; `@dependabot rebase` (or `recreate` if it says it was edited).
+  - **Not done, in order:** (1) the nose and flank barely changed: the front wing still has a visible edge at the arch and the flank
+    is plain; needs a reference to measure against (owner's call); (2) soft tail, window frame, door line (plan item 5), interior
+    edge-map comparison, Tier 2 of #620; (3) brake lights at night unchecked, and a faint red haze beside the right rear corner when
+    braking is unexplained (tyre smoke or a stray halo); (4) three was bumped to 0.186.1 by #633 on green CI only: look at the city once.
+  - **Gotchas learned:** `scene.ray_cast(dg, ...)` in `tools/cars/kestrel.py` sees objects added since the depsgraph was built at
+    their default size, so fittings placed late can hit phantoms; use `body.ray_cast` for anything laid on the shell. Name-prefix
+    matching on glb nodes catches `_bezel` and `_cut` siblings. A squash merge stranded #636's late commit again: check
+    `gh pr view` state before pushing to a PR branch. Studio renders segfault in Blender about two times in three: loop until the file exists.
+    The update-branches bot edits Dependabot PRs, after which Dependabot refuses `rebase`.
+  - **Continue with this prompt:**
+    > Continue the Kestrel (#620, car pilot #584). Read docs/HANDOFF.md (the 2026-10-04 Sunday evening entry). Check #639 merged and
+    > that the next Dependabot PR is armed. Look at the city once after the three bump. Then ask the owner for a front-wing and flank
+    > reference, and do plan item 5 in tools/cars/kestrel.py. Original and unbranded; sim untouched; never pkill -f broadly.
+- **Earlier the same day (superseded by the entry above): #627 merged; brake lights and the paint compensation wait on branch `kestrel-brake-lights-wip`; next is the saturation-aware grade lift (#620, #584).**
   - **Where things are:** #626 and #627 are on `main`. Branch `kestrel-brake-lights-wip` (rebased onto `origin/main`, NO PR on purpose:
     auto-merge arms every PR and the owner has not seen the brake lights braking in game) holds: brake lights (`setBrakeLights`,
     `scene/cars.ts`), `compensateForGrade` (`scene/glbcar.ts`, used by `CarPool.place` and the view's own car), the `studio.py`
