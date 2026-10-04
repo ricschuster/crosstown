@@ -3,6 +3,72 @@
 Where the project stands, so a fresh session can pick it up without re-deriving
 anything. This is a solo project: see [CONTRIBUTING](../CONTRIBUTING.md).
 
+- **Update (2026-10-04, end of session): shape measured, loft changes next (#620 item 0b, #584).**
+  The owner thinks the Kestrel still looks fake, mostly from its shape, and chose
+  the shape pass next, after the colour fix and before brake lights. Reference
+  is **our own FLUX.1-schnell** images (the Copilot work-account image was ruled
+  out for anything that ships). Numbers and method are in
+  [docs/research/car-pilot-trellis.md](research/car-pilot-trellis.md), "Shape
+  measurement".
+  - **Findings:** roof about 15 cm too high and flat (t 0.4-0.6) where the
+    reference peaks once; front fenders and hood 7-8 cm too low; wheels too far
+    in (reference wheelbase 0.66 of length vs 0.63, front overhang 0.83 D vs
+    1.10 D); tail slightly high; cabin position right. Width not measured yet.
+  - **Images** (outside the repo): `~/Pictures/crosstown-compare/flux2/`, side
+    set `p3_s1-4`, rear set `p4_s1-4`, sheets `sheet_side.png` and
+    `sheet_rear.png`. The owner picked **side seed 2** as the main target. Every
+    image carries some mark (centre caps, garbled lettering, a three-pointed
+    roundel on rear seed 3); ignore all of them and look at each before showing.
+    `tools/trellis/flux_concept.py` gained prompts 3 and 4 (committed).
+  - **Do next:** the colour fix (#620 item 0) first if not yet done, then in
+    `tools/cars/kestrel.py`: lower and sharpen `ROOF` (peak about 1.12 m at
+    t 0.43), raise the front of `BELT`/`ROOF` toward the front axle, `WHEELZ`
+    1.16 to about 1.23, lower the tail; render the same side view and overlay it
+    on `p3_s2.png`; measure width from the rear set; look in the game at chase
+    and close distance (there is no close camera yet, a #620 Tier 2 item).
+  - **State:** branch `kestrel-nose-tail-paint`, nothing pushed, no PR open for
+    these commits (handoff entries, the model-load banner in `glbcar.ts`, the
+    two FLUX prompts, this note). The banner is untested. A dev server may still
+    run on port 5192 from this checkout; stop only that PID, never `pkill -f`.
+    The owner saw the older Kestrel on port 5173 and after a refresh, cause never
+    found, fixed by a fresh origin.
+  - **Continue with this prompt:**
+    > Continue the Kestrel shape pass (#620 item 0b, car pilot #584). Read
+    > docs/HANDOFF.md (the 2026-10-04 end-of-session entry) and the "Shape
+    > measurement" section of docs/research/car-pilot-trellis.md first. Do the
+    > colour fix (#620 item 0) if it is not done, then rework the loft in
+    > tools/cars/kestrel.py against the measured gaps (roof, front fenders and
+    > hood, wheel placement, tail), render a side view and overlay it on
+    > ~/Pictures/crosstown-compare/flux2/p3_s2.png, measure width from the rear
+    > set, and look in the game, never only in Blender. Original and unbranded;
+    > nothing from the Copilot experiment; sim untouched; npm run typecheck and
+    > npm run test before a PR; never pkill -f broadly.
+- **Update (2026-10-04, later): owner has driven the new Kestrel; order is colour, brake lights, close-up camera and realism, damage staging (#620, #584).**
+  - **Owner's feedback:** the car colour is too dull (more vibrant); damage is
+    not obvious enough at full damage (later); wants the model more realistic,
+    **at close-up as well as chase distance**. Order agreed: (1) colour, (1b) a shape pass (the owner thinks the shape looks fake; #620 item 0b),
+    (2) brake lights, (3) a close-up camera, then the realism pass (lamps,
+    interior, glass, wheels, fine detail), (4) staged damage as a new Tier 2
+    item. #620 is updated to match (new item 0, "Colour", and two Tier 2 items).
+  - **Why it is dull (not yet changed):** `DIRT = 1` in `scene/glbcar.ts`
+    (grime blend and darkening), the bake's occlusion floor in `shade()`
+    (`0.35 + 0.65 * light`), a 12% metallic base with a half-strength coat, and
+    the **grade** (`GRADE.saturation` 0.84 in `scene/grade.ts`, always on, whole
+    frame, part of the approved look: do not change without the owner's word).
+    Raise the paint's saturation, not its metalness. `?look=particles` is only
+    dust motes and has nothing to do with colour; there is no setting called hue.
+  - **Damage today:** a brown paint lerp, scuff noise and a duller coat, all
+    from `wearPaint()`; staging needs Blender parts shown or hidden by
+    threshold, view-side only, with the first fifth cosmetic (#95).
+  - **A stale-browser scare:** the owner saw the older Kestrel on port 5173 and
+    after a refresh; the server and the committed `kestrel.glb` (1,704,444 bytes)
+    were right, a fresh origin (5191, then 5192) fixed it, cause never found
+    (likely an old service worker or cache on 5173). Headless runs showed the
+    new model at damage 0 and 1. **Uncommitted:** `glbcar.ts` now shows a red
+    on-screen note when `kestrel.glb` fails to load, so a fallback to the
+    procedural car is visible; typecheck passes, the banner is untested.
+  - **Dev server:** one on port 5192 from this checkout (the 5173 and 5191 ones
+    were stopped by PID). Stop only your own PID, never `pkill -f`.
 - **Update (2026-10-04): Kestrel nose, tail and paint done; brake lights then Tier 2 next (#620, #584).**
   The owner asked to improve the Kestrel further; the plan is issue **#620**
   (checkboxes, Tier 1 then Tier 2). Read it, then the "Nose and tail" and

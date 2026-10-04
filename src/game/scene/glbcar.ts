@@ -29,6 +29,11 @@ export async function loadKestrelModel(url = `${import.meta.env.BASE_URL}models/
     source = gltf.scene;
   } catch (error) {
     console.warn('kestrel model not loaded, keeping the procedural car', error);
+    // Said on screen too: the fallback looks like a model that was never built.
+    const note = document.createElement('div');
+    note.textContent = 'models: kestrel.glb failed to load, showing the procedural car';
+    note.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9;padding:4px 8px;font:12px monospace;color:#fff;background:#a33;border-radius:4px';
+    document.body.append(note);
   }
 }
 

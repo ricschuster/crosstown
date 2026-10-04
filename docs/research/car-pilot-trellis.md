@@ -306,6 +306,69 @@ three renders to get right.
 - **Open:** the shoulder is still soft at chase distance; headlight glow check at night; other bodies would need their
   own parameter sets (the script is one car, not yet a kit).
 
+### Shape measurement (2026-10-04, #620 item 0b)
+
+The owner said the Kestrel still looks fake and thinks it is mostly the shape.
+Reference: FLUX.1-schnell, unbranded side profile (`flux_concept.py` prompt 3,
+seed 2, `~/Pictures/crosstown-compare/flux2/p3_s2.png`, not in the repo; prompts 3
+and 4 are the side and rear sets, seeds 1-4 each). A study aid for proportions
+only: no marks from it are used, it ships nothing and needs no credits row. FLUX
+bends perspective (the rear tyre read about 5% larger than the front), so treat
+every number as plus or minus 5%.
+
+Method: segment the car in the image (red paint or anything darker than the
+grey backdrop), take the tyre outer diameter D (mean 155 px) and the ground line
+(y = 553) from the tyres, and read every height as a multiple of D. Then the
+Kestrel's `ROOF` curve and dimensions from `tools/cars/kestrel.py` in the same
+units (tyre 0.63 m, so D = 0.63 m). `t` runs tail (0) to nose (1).
+
+| | Reference | Kestrel |
+|---|---|---|
+| Length / D | 5.97 | 5.87 |
+| Wheelbase / length | 0.66 | 0.63 |
+| Front overhang / D | 0.83 | 1.10 |
+| Rear overhang / D | 1.18 | 1.10 |
+| Roof peak / D | 1.79 | 2.03 |
+| Ground clearance | about 0.15 m | 0.15 m |
+| Roof peak at t | 0.43-0.5 | 0.44-0.54 |
+
+Top silhouette in metres, reference scaled to our tyre:
+
+| t | Reference | Kestrel |
+|---|---|---|
+| 0.05 (tail) | 0.83 | 0.91 |
+| 0.20 | 1.00 | 1.02 |
+| 0.30 | 1.09 | 1.13 |
+| 0.40 | 1.13 | 1.24 |
+| 0.50 (roof) | 1.10 | 1.28 |
+| 0.60 | 0.95 | 1.22 |
+| 0.70 (windscreen) | 0.83 | 0.93 |
+| 0.80 (front fender) | 0.81 | 0.74 |
+| 0.90 (hood) | 0.74 | 0.66 |
+
+What it says:
+1. **The roof is the biggest gap**: about 15 cm too high and flat from t 0.4 to
+   0.6, where the reference peaks once and falls away. That is the bubble.
+2. **Too low at the front**: the reference's front fenders and hood are 7-8 cm
+   higher. It has a low roof over high haunches; the Kestrel has the reverse.
+3. **Wheels sit too far in**: the reference has a longer wheelbase and about
+   0.2 m less front overhang (at 3.7 m long: wheelbase 2.46 m vs 2.32 m, front
+   overhang 0.51 m vs 0.69 m).
+4. **The tail is a little high** (6-8 cm near t 0.05).
+5. **The cabin is in the right place**; its shape is the problem, not its position.
+
+Not measurable from a side view: width. Check it from the rear set
+(`p4_s*.png`: narrow cabin over wide haunches, a full-width lamp bar over a
+black diffuser, round exhausts). Seeds 1-2 of the rear set carry garbled
+lettering, seed 3 a three-pointed roundel (reject), seed 4 a round emblem; ignore
+every mark.
+
+First edits planned, all in `kestrel.py`: lower and sharpen `ROOF` (peak about
+1.12 m at t 0.43, falling faster behind it); raise the front of `BELT` and
+`ROOF` toward the front axle; move the hubs out (`WHEELZ` 1.16 to about 1.23,
+length stays 3.7 m); lower the tail slightly. Then render the same side view and
+overlay it on the reference.
+
 ### Where that leaves the pilot
 
 The only route that gave a better-looking car is a detailed concept image in
