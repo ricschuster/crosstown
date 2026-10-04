@@ -18,7 +18,7 @@ jobs:
     name: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # CLAUDE.md house style. The two editor pages are exempt: they show an
       # em dash as the "no value" placeholder in their readouts, which is UI,
