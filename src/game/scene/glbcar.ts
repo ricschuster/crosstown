@@ -127,6 +127,21 @@ function finished(kind: 'glass' | 'trim', vertexColors: boolean): THREE.Material
   return m;
 }
 
+/**
+ * Give a lacquer its colour back after the grade (scene/grade.ts), which takes 16% of the
+ * saturation and lifts the blacks by 0.03-0.05: on a dark red that lift is most of the
+ * pigment, and the car reads salmon. Saturate and darken the paint going in, so it lands
+ * where the colour picker said. In place, for the car's own colour object. The grade is the
+ * approved look and is not touched; this is the car's half of it.
+ */
+export const GRADE_SATURATION_BACK = 1.35;
+export const GRADE_DARKEN = 0.6;
+export function compensateForGrade(paint: THREE.Color): THREE.Color {
+  const hsl = { h: 0, s: 0, l: 0 };
+  paint.getHSL(hsl);
+  return paint.setHSL(hsl.h, Math.min(1, hsl.s * GRADE_SATURATION_BACK), hsl.l * GRADE_DARKEN);
+}
+
 /** Set a lacquer's wear from the sim's damage (0 to 1): scuffs on the shader and a coat that dulls. */
 export function wearPaint(material: THREE.Material, hurt: number): void {
   const wear = material.userData.wear as { value: number } | undefined;
@@ -242,11 +257,13 @@ export function kestrelParts(): THREE.Mesh[] | null {
       if (kind === 'glass' || kind === 'trim') own = finished(kind, 'color' in geometry.attributes);
       const part = new THREE.Mesh(geometry, own);
       part.name = name;
-      if (name.startsWith('lamp_head')) {
+      // Not the bezels (`lamp_tail_l_bezel`): they are trim, and a bezel taken for a
+      // lens became a second lit lamp with a halo of its own.
+      if (/^lamp_head_[lr]$/.test(name)) {
         part.material = new THREE.MeshBasicMaterial({ color: '#6f7481' });
         part.name = 'headlight';
-      } else if (name.startsWith('lamp_tail') || name === 'tail_bar') {
-        part.material = new THREE.MeshBasicMaterial({ color: '#ff4a38' });
+      } else if (/^lamp_tail_[lr]$/.test(name) || name === 'tail_bar') {
+        part.material = new THREE.MeshBasicMaterial({ color: '#b8301f' });
       }
       out.push(part);
     }

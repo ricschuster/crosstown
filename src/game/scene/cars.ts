@@ -4,7 +4,7 @@ import { carParts, CAR_PAINT } from './carshape';
 import type { CarBody } from '../cars';
 import type { CopKind } from '../constants';
 import { lampGlowTexture } from './signage';
-import { kestrelParts } from './glbcar';
+import { compensateForGrade, kestrelParts } from './glbcar';
 
 /**
  * What each police unit is drawn as (#584). Drawing only, and kept here rather
@@ -144,7 +144,7 @@ export function makeCar(color: string, cop = false, style: CarBody = 'coupe'): T
  */
 function addLampHalos(car: THREE.Group): void {
   const map = lampGlowTexture();
-  const lamps = car.children.filter((c) => c.name === 'headlight' || /^lamp_tail/.test(c.name));
+  const lamps = car.children.filter((c) => c.name === 'headlight' || /^lamp_tail_[lr]$/.test(c.name));
   for (const lamp of lamps) {
     const geometry = (lamp as THREE.Mesh).geometry;
     geometry.computeBoundingBox();
@@ -163,6 +163,7 @@ function addLampHalos(car: THREE.Group): void {
     );
     halo.name = 'halo';
     halo.userData.strength = head ? 0.8 : 0.55;
+    halo.userData.tail = !head;
     halo.position.copy(box.getCenter(new THREE.Vector3())).add(lamp.position);
     const size = (box.max.x - box.min.x) * (head ? 1.9 : 1.6) + BODY_W * 0.04;
     halo.scale.set(size, size * 0.7, 1);
@@ -171,12 +172,38 @@ function addLampHalos(car: THREE.Group): void {
   }
 }
 
-/** Fade a car's lamp halos with the night. */
+/**
+ * Fade a car's lamp halos with the night. A tail halo is also lit by the brake
+ * (`setBrakeLights`), which shows by day as well: it is the one signal a chase
+ * camera gets of what the car in front is doing.
+ */
 export function setHalos(car: THREE.Object3D, lit: number): void {
+  const brake = (car.userData.brake as number | undefined) ?? 0;
   for (const part of car.children) {
     if (part.name !== 'halo') continue;
-    (part as THREE.Sprite).material.opacity = lit * (part.userData.strength as number);
-    part.visible = lit > 0.02;
+    const strength = part.userData.strength as number;
+    const glow = part.userData.tail ? Math.max(lit * strength, brake * BRAKE_HALO) : lit * strength;
+    (part as THREE.Sprite).material.opacity = glow;
+    part.visible = glow > 0.02;
+  }
+}
+
+/** Tail lens on a lit car, and braking: the second is the brighter. */
+const TAIL_RUNNING = '#b8301f';
+const TAIL_BRAKING = '#ff5a44';
+const BRAKE_HALO = 0.85;
+
+/**
+ * Brake lights on an authored car: the lens brightens and the tail halos come
+ * on, day or night. Read-only from the view's side, the sim never hears of it.
+ * Procedural bodies have no named tail lamps and are left as they are.
+ */
+export function setBrakeLights(car: THREE.Object3D, on: boolean): void {
+  if (!!car.userData.brake === on) return;
+  car.userData.brake = on ? 1 : 0;
+  for (const part of car.children) {
+    if (!/^lamp_tail_[lr]$/.test(part.name) && part.name !== 'tail_bar') continue;
+    ((part as THREE.Mesh).material as THREE.MeshBasicMaterial).color.set(on ? TAIL_BRAKING : TAIL_RUNNING);
   }
 }
 
@@ -296,13 +323,9 @@ export class CarPool {
     const body = car.children[0] as THREE.Mesh;
     const paint = (body.material as THREE.MeshLambertMaterial).color;
     paint.set(color);
-    // The grade takes 16% of every colour's saturation (scene/grade.ts); the lacquer
-    // gives it back so a red car is still red on screen.
-    if ((body.material as THREE.Material).userData.wear) {
-      const hsl = { h: 0, s: 0, l: 0 };
-      paint.getHSL(hsl);
-      paint.setHSL(hsl.h, Math.min(1, hsl.s * 1.2), hsl.l);
-    }
+    // The grade veils a lacquer (scene/grade.ts); `compensateForGrade` gives it back
+    // so a red car is still red on screen.
+    if ((body.material as THREE.Material).userData.wear) compensateForGrade(paint);
     if (dim !== 1) paint.multiplyScalar(dim);
     return car;
   }

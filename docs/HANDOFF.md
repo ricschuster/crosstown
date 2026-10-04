@@ -3,6 +3,89 @@
 Where the project stands, so a fresh session can pick it up without re-deriving
 anything. This is a solo project: see [CONTRIBUTING](../CONTRIBUTING.md).
 
+- **SESSION END (2026-10-04, Sunday): #627 merged; brake lights and the paint compensation wait on branch `kestrel-brake-lights-wip`; next is the saturation-aware grade lift (#620, #584).**
+  - **Where things are:** #626 and #627 are on `main`. Branch `kestrel-brake-lights-wip` (rebased onto `origin/main`, NO PR on purpose:
+    auto-merge arms every PR and the owner has not seen the brake lights braking in game) holds: brake lights (`setBrakeLights`,
+    `scene/cars.ts`), `compensateForGrade` (`scene/glbcar.ts`, used by `CarPool.place` and the view's own car), the `studio.py`
+    `NODENOISE=1` switch, and the handoff entries. `npm run typecheck` passes; the full `npm run test` has NOT been run on it
+    (the earlier run on #627 was before these changes). The owner's dev server (port 5173) may still be running on the old
+    `kestrel-reflections` checkout; stop it by PID only.
+  - **The finding of the day:** the in-game Kestrel is salmon, the Blender studio render of the same model is a deep red. The
+    cause is the grade, not the model or the clear coat: `c += lift * (1 - lit)` and the golden-hour `horizon` veil in
+    `scene/grade.ts` are added after the paint, so no pigment can beat them. Option 1 (darker, more saturated paint,
+    `GRADE_SATURATION_BACK` 1.35, `GRADE_DARKEN` 0.6) gives only a slight gain. Pictures, all outside the repo:
+    `~/Pictures/crosstown-compare/salmon/before_after.png`, `sweep.png`, `sheet.png`; `studio/side.png`, `front34.png`, `rear34.png`.
+  - **Next, in order:**
+    1. Owner's call, recommended: make the lift and the horizon veil fade out on saturated pixels
+       (`lift * (1 - lit) * (1 - sat)`) so grey road, shadows and sky stay as approved and only colour stops being veiled; show
+       before and after on one settled chase frame. The grade is "the approved look", so show it before merging.
+    2. Check brake lights in game (tap S in the Kestrel, chase camera, day and night), run `npm run typecheck` and `npm run test`,
+       then open the PR from the wip branch.
+    3. Fix the model faults the studio showed: thin stray vertical lines above the mirrors and at the door, lumpy nose in the front
+       3/4, flat flank slab, soft tail (`tools/cars/kestrel.py`). Then the rest of plan item 5 (wheels, window frame, door line),
+       the interior edge-map comparison, and Tier 2 of #620.
+  - **Gotchas learned today (will bite again):**
+    - `?look=` REPLACES the set and `models` is the only switch off by default, so `?look=models` alone is the plain city. Full list:
+      `?look=env,pbr,materials,trees,particles,clutter,buildings,models`. Driving is `/`, not `?renderer=city` (that is the free camera).
+    - The Kestrel mesh shows only for the `fastback` body and only if the garage car is the Kestrel.
+    - Headless shots: the first screenshot of every run lands in the intro flyover; take a throwaway one first, then wait 9 s
+      per variant for the chase camera to settle. Setting `envMapIntensity` or `clearcoat` on the paint in the page showed no change,
+      unproven why (the view re-assigns `envMap` every 60 frames in `flagMeshes`).
+    - Blender 5.2's Open Image Denoise crashes intermittently on this machine: `NODENOISE=1 blender -b -P tools/cars/studio.py -- public/models/kestrel.glb OUT.png side|front34|rear34`.
+    - The player's car was never given the saturation give-back (only pooled cars were); fixed on the wip branch.
+    - A squash merge strands later commits: this branch was rebased `--onto origin/main` after #627.
+  - **Continue with this prompt:**
+    > Continue the Kestrel (#620, car pilot #584). Read docs/HANDOFF.md (the 2026-10-04 SESSION END entry). Branch
+    > `kestrel-brake-lights-wip` has brake lights and the paint compensation, no PR yet. First try the saturation-aware grade lift in
+    > `scene/grade.ts` (`lift * (1 - lit) * (1 - sat)`, same for the horizon veil), look at one settled chase frame before and after
+    > next to `~/Pictures/crosstown-compare/studio/rear34.png`, and show the owner before merging. Then check the brake lights in game,
+    > run npm run typecheck and npm run test, open the PR. Then the stray lines and lumpy nose in tools/cars/kestrel.py. Original
+    > and unbranded; sim untouched; never pkill -f broadly; check whether the previous PR merged before pushing more to its branch.
+- **Update (2026-10-04, Sunday morning, after a crash): brake lights written, studio render done, salmon investigation under way (#620, #584).**
+  - **State of the branches:** #626 (profile fit, width, nose) merged. #627 (`kestrel-reflections`: env probe gets a dark
+    ground and a skyline, `tools/cars/studio.py`, cityshot wait 90 s) was open and BLOCKED on CI at handoff. The brake-light work
+    is committed on top of it locally and pushed as `kestrel-brake-lights-wip` (no PR yet, so #627 cannot carry it by accident).
+  - **Brake lights (#620 item 3), done but only unit-tested:** `setBrakeLights` in `scene/cars.ts` (lens colour
+    `TAIL_RUNNING` to `TAIL_BRAKING`, tail halos lit by `BRAKE_HALO`, day or night, `setHalos` reads `car.userData.brake`);
+    `CityView` calls it with `input.down && !input.up && world.speed > 1` (read-only, sim untouched). Tail lens base colour in
+    `glbcar.ts` is now dim `#b8301f`. Authored Kestrel only; traffic and procedural bodies have no named tail lamps. Owner has
+    NOT yet seen it braking in game. Full `npm run test` not run since. `cars.test.ts` has two new tests.
+  - **Studio renders** (`tools/cars/studio.py`, `NODENOISE=1` skips the denoiser, which crashed Blender on two of three views):
+    `~/Pictures/crosstown-compare/studio/side.png`, `front34.png`, `rear34.png`. In the studio the paint is a deep saturated red
+    with real highlights and a dark lower flank; in game the same car is a flat salmon. So **the game's lighting, not the model,
+    is the main reason it looks bland.** Model faults still visible: lumpy nose in the front 3/4, flat flank slab, thin stray
+    vertical lines above the mirrors and at the door, soft tail.
+  - **Salmon investigation RESULT (later that morning):** one fixed chase frame, one factor at a time
+    (`~/Pictures/crosstown-compare/salmon/sheet.png`, script `tools/_salmon.mjs`, untracked, delete before committing):
+    paint `envMapIntensity` 0, clear coat off, fill at 40% and fog off all changed the car almost nothing (caveat: the first two
+    may have been set on a material the view overrides, unproven); **grade off gave a deep saturated red** close to the studio.
+    Cause: `GRADE` in `scene/grade.ts` (saturation 0.84, cool lift 0.03-0.05 on the blacks, contrast 1.06) veils a dark paint
+    into pink. The grade is the approved look, so the owner chose **option 1: compensate in the paint** (darker and more
+    saturated in `CarPool.place`, next to the existing 1.2x saturation boost), not touch the grade. Options 2 (soften the grade)
+    and 3 (cars outside the grade pass) are not chosen.
+  - **Option 1 built and measured (`compensateForGrade` in `scene/glbcar.ts`, used by `CarPool.place` and the view's own
+    car, which had NO compensation before): only a slight gain.** A sweep of ever darker paint (`salmon/sweep.png`) showed the
+    top and rear surfaces keep a salmon sheen even over near-black pigment, so the veil is ADDED after the paint: the grade's
+    `c += lift * (1 - lit)` (`scene/grade.ts`), plus the golden-hour `horizon` veil across the mid-frame band where the chase-camera
+    car sits. Paint cannot beat an additive. Before/after: `salmon/before_after.png`. Constants `GRADE_SATURATION_BACK` 1.35,
+    `GRADE_DARKEN` 0.6. **Real fix, owner's call:** make the lift (and horizon veil) fade out on saturated pixels, e.g.
+    `lift * (1 - lit) * (1 - sat)`, which leaves the grey road and shadows exactly as approved and only stops the veil on colour.
+  - **Salmon investigation (original plan, kept for the method):** suspects, most likely first: (1) sky reflection washing the clear coat
+    (`envMapIntensity` 0.7, the PMREM probe in `cityview.ts`, which the #627 probe change only helps on side-facing
+    surfaces); (2) the colour grade and fill light lowering contrast (`scene/grade.ts` takes 16% saturation, `CarPool.place`
+    gives back 1.2x); (3) vertex-baked light only, little contact shadow; (4) distance haze; (5) chase camera far and dead behind.
+    Method: one fixed `cityshot --view drive` shot (`LOOK=env,pbr,materials,trees,particles,clutter,buildings,models`), then vary
+    one thing at a time (paint `envMapIntensity` 0 vs 0.7, grade on or off for the car, fog on or off) and compare against `studio/rear34.png`.
+  - **Look flags trap:** `?look=` REPLACES the set; `models` is the only switch off by default, so `?look=models` alone turns
+    env, pbr, materials, trees, buildings and particles off and gives the plain city. Use the full list above, or none of it
+    plus a fix (a `+models` additive form was offered, owner has not chosen). The Kestrel only shows when the garage car is the
+    fastback body (the owner's car was not selected at first).
+  - **Continue with this prompt:**
+    > Continue the Kestrel salmon investigation (#620, #584). Read docs/HANDOFF.md (the Sunday-morning entry). Find what turns the
+    > studio's deep red into the game's salmon by varying one factor at a time on a fixed drive shot, fix the biggest, and show
+    > before and after next to `~/Pictures/crosstown-compare/studio/rear34.png`. Then check brake lights in game, run
+    > `npm run typecheck` and `npm run test`, open a PR from `kestrel-brake-lights-wip`. Then the stray lines and lumpy nose in
+    > `tools/cars/kestrel.py`. Original and unbranded; sim untouched; never pkill -f broadly; check whether #627 merged before pushing.
 - **Update (2026-10-04, late night): lamps, mirrors and side-view overlay done; closing the gap to the reference next (#620, #584).**
   PRs #624 (lamps, mirrors, fender ripple) merged; #625 (overlay tools, hood and windscreen lowered) was open at handoff,
   check `git log origin/main` before assuming. #625 is branch `kestrel-side-overlay` (overlay tools, ROOF/BELT lowered, lamps at the nose corner, plan and this handoff); its merge state was BLOCKED (waiting on CI) at handoff, so check `gh pr view 625`, and if it merged without the handoff commit, re-send that commit with `rebase --onto origin/main`. Both were squash-merged before the last commit each time, so

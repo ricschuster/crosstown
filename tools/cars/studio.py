@@ -18,7 +18,7 @@ VIEW = args[2] if len(args) > 2 else 'side'
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=GLB)
 sc = bpy.context.scene
-sc.render.engine = 'CYCLES'; sc.cycles.samples = 64; sc.cycles.use_denoising = True
+sc.render.engine = 'CYCLES'; sc.cycles.samples = 128 if __import__("os").environ.get("NODENOISE") else 64; sc.cycles.use_denoising = not __import__('os').environ.get('NODENOISE')
 sc.view_settings.view_transform = 'Standard'
 sc.render.resolution_x, sc.render.resolution_y = 1024, 768
 w = bpy.data.worlds.new('w'); w.use_nodes = True; sc.world = w
