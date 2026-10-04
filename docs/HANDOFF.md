@@ -17,7 +17,15 @@ anything. This is a solo project: see [CONTRIBUTING](../CONTRIBUTING.md).
     with real highlights and a dark lower flank; in game the same car is a flat salmon. So **the game's lighting, not the model,
     is the main reason it looks bland.** Model faults still visible: lumpy nose in the front 3/4, flat flank slab, thin stray
     vertical lines above the mirrors and at the door, soft tail.
-  - **Salmon investigation (in progress):** suspects, most likely first: (1) sky reflection washing the clear coat
+  - **Salmon investigation RESULT (later that morning):** one fixed chase frame, one factor at a time
+    (`~/Pictures/crosstown-compare/salmon/sheet.png`, script `tools/_salmon.mjs`, untracked, delete before committing):
+    paint `envMapIntensity` 0, clear coat off, fill at 40% and fog off all changed the car almost nothing (caveat: the first two
+    may have been set on a material the view overrides, unproven); **grade off gave a deep saturated red** close to the studio.
+    Cause: `GRADE` in `scene/grade.ts` (saturation 0.84, cool lift 0.03-0.05 on the blacks, contrast 1.06) veils a dark paint
+    into pink. The grade is the approved look, so the owner chose **option 1: compensate in the paint** (darker and more
+    saturated in `CarPool.place`, next to the existing 1.2x saturation boost), not touch the grade. Options 2 (soften the grade)
+    and 3 (cars outside the grade pass) are not chosen.
+  - **Salmon investigation (original plan, kept for the method):** suspects, most likely first: (1) sky reflection washing the clear coat
     (`envMapIntensity` 0.7, the PMREM probe in `cityview.ts`, which the #627 probe change only helps on side-facing
     surfaces); (2) the colour grade and fill light lowering contrast (`scene/grade.ts` takes 16% saturation, `CarPool.place`
     gives back 1.2x); (3) vertex-baked light only, little contact shadow; (4) distance haze; (5) chase camera far and dead behind.
