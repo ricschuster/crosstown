@@ -409,3 +409,32 @@ includes its floor shadow). Lamps are almond lenses in pockets cut into the shel
 (`lamp()`), the cutter keeping its x,z footprint so a sloping nose does not shift the opening.
 The fender ripple was the flank bumps gated on noisy vertex normals; they now weight by
 width. A sawtooth remains on the nose's lower dark edge (material split of subdivided faces).
+
+### Closing the gap to the reference: plan (agreed 2026-10-04)
+
+The overlay (`tools/cars/sideview.py` + `tools/cars/overlay.py`, see above; run
+`blender -b -P tools/cars/sideview.py -- public/models/kestrel.glb OUT.png` then
+`python3 tools/cars/overlay.py ~/Pictures/crosstown-compare/flux2/p3_s2.png OUT.png overlay.png`)
+makes "looks like the reference" a number. The owner liked `overlay.png`, a yellow reference outline
+and a cyan ours outline on the FLUX render, and asked for ideas to get closer. Order, most useful first:
+
+1. **Fit the profile curves by script.** A loop edits `ROOF`/`BELT` keys (and nose length, hood,
+   tail), re-renders and minimises the silhouette difference to `p3_s2.png`, instead of reading the
+   table by hand. Limit: one fixed side view, so it cannot see width.
+2. **Match width the same way** with a front or rear silhouette overlay against the rear set
+   (`p4_s*.png`); with the side view that pins the shell in three dimensions.
+3. **Compare interior lines**, not only the outline: an edge map of the reference against our
+   render's edges, for the shoulder crease, door cut, glass shapes and arch shape, which is
+   where it still reads as a toy.
+4. **Compare lighting.** Render ours under a soft studio box with a gradient floor reflection and
+   compare shading; the reference reads as real mostly through clean reflections along the
+   flank. A matching light setup plus stronger clear coat and environment map may matter more
+   than geometry.
+5. **Detail pass from the overlay:** the nose is 0.13 m too long (3.83 m against 3.68 m), the
+   sawtooth on the nose's lower dark edge (material split of subdivided faces), the five-spoke
+   wheel look, window frame, door shut line.
+6. **Fallback, the owner's call:** route E, a TRELLIS body from the reference with our own wheels,
+   glass and lamps.
+
+Recommended start: 1, 2 and the nose items in 5 (no judgement needed, measurable), then 4.
+Brake lights (#620 item 3) stay on the list after the shape work.
