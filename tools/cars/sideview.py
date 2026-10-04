@@ -5,7 +5,10 @@ prints the height difference along the car. Scale and framing are fixed in numbe
 that script: 250 px per metre, ground at row 554, the car's centre at column 477.5 of a 1024x768
 frame (the reference image's wheel centres, see overlay.py).
 
-  blender -b -P tools/cars/sideview.py -- kestrel.glb OUT.png
+  blender -b -P tools/cars/sideview.py -- kestrel.glb OUT.png [rear]
+
+With `rear` the camera looks along the car from behind (same scale, car centred on column 512,
+ground at row 554) for rearview.py, which compares widths.
 """
 import bpy, sys, math
 args = sys.argv[sys.argv.index('--') + 1:]
@@ -26,6 +29,9 @@ cam.data.type = 'ORTHO'; cam.data.ortho_scale = W / PXM
 # glTF import is y-up with the nose on +Z, which Blender turns back into nose -Y, z up.
 cam.location = (10, (512 - 477.5) / PXM, (554 - 384) / PXM)
 cam.rotation_euler = (math.pi / 2, 0, math.pi / 2)
+if 'rear' in args[2:]:
+    cam.location = (0, 10, (554 - 384) / PXM)
+    cam.rotation_euler = (math.pi / 2, 0, math.pi)
 scene.camera = cam
 scene.render.filepath = OUT
 bpy.ops.render.render(write_still=True)
