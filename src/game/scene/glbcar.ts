@@ -257,10 +257,12 @@ export function kestrelParts(): THREE.Mesh[] | null {
       if (kind === 'glass' || kind === 'trim') own = finished(kind, 'color' in geometry.attributes);
       const part = new THREE.Mesh(geometry, own);
       part.name = name;
-      if (name.startsWith('lamp_head')) {
+      // Not the bezels (`lamp_tail_l_bezel`): they are trim, and a bezel taken for a
+      // lens became a second lit lamp with a halo of its own.
+      if (/^lamp_head_[lr]$/.test(name)) {
         part.material = new THREE.MeshBasicMaterial({ color: '#6f7481' });
         part.name = 'headlight';
-      } else if (name.startsWith('lamp_tail') || name === 'tail_bar') {
+      } else if (/^lamp_tail_[lr]$/.test(name) || name === 'tail_bar') {
         part.material = new THREE.MeshBasicMaterial({ color: '#b8301f' });
       }
       out.push(part);
