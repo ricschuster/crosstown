@@ -93,6 +93,7 @@ def ring(t):
     hw = half_width(t); B = bottom(t); Bl = belt(t); R = max(roof(t), Bl + 0.002)
     ch = R - Bl
     cab = max(0.0, min(1.0, ch / 0.18))
+    k = min(1.0, ch / 0.032)       # over the nose the roof meets the belt: scale the fixed offsets so the top points stay in order
     gx = hw * 0.9
     rw = gx - (gx - 0.52) * cab
     top = Bl + 0.03
@@ -104,11 +105,11 @@ def ring(t):
         (hw * 0.925, B + (Bl - B) * 0.55),
         (hw * 1.0, Bl - 0.085),
         (hw * 0.90, Bl),
-        (gx, Bl + 0.012),
+        (gx, Bl + 0.012 * k),
         (gx + (rw - gx) * 0.35, Bl + ch * 0.45),
         (rw * 1.0, Bl + ch * 0.93),
-        (rw * 0.8, Bl + ch * 1.0 + 0.012),
-        (0.0, Bl + ch * 1.0 + 0.02),
+        (rw * 0.8, Bl + ch * 1.0 + 0.012 * k),
+        (0.0, Bl + ch * 1.0 + 0.02 * k),
     ]
     return pts
 
@@ -192,9 +193,13 @@ def flank_offset(y, z, side_n):
     off += 0.024 * g(y - 0.1, 1.0) * g(z - 0.74, 0.04)        # shoulder lip
     return off * side_n
 for v in body.data.vertices:
-    nx = v.normal.x
-    if abs(v.co.x) > 0.5 and abs(nx) > 0.45:
-        v.co.x += flank_offset(v.co.y, v.co.z, 1 if v.co.x > 0 else -1)
+    # The flank is wherever the shell is near its full width. Gating on the vertex normal instead
+    # let the 1 cm mesh's noisy normals switch the bump on and off vertex by vertex, which
+    # rippled the fender at the nose; width is a smooth function of position.
+    hw_here = half_width(0.5 - v.co.y / L)
+    wgt = max(0.0, min(1.0, (abs(v.co.x) / max(hw_here, 0.05) - 0.88) / 0.08)) * (1.0 if abs(v.co.y) < 2.2 else 0.0)
+    if wgt > 0:
+        v.co.x += wgt * flank_offset(v.co.y, v.co.z, 1 if v.co.x > 0 else -1)
 body.data.update()
 
 # ---- wheel arches by boolean -------------------------------------------------
@@ -365,28 +370,39 @@ def box(name, size, loc, material, rot=(0, 0, 0)):
     o.data.materials.append(material)
     return o
 
-def lens(name, material, origin_y, dirn, x0, x1, zc, half_h, dome, lift, s):
-    """A lamp laid on the shell as a swept lens: a grid over (x, z) whose outline is
-    `zc(u)` (centre line) and `half_h(u)` (half height), u 0 at the inboard end and 1 at the
-    outboard one, each point ray-cast onto the shell and lifted by a domed `dome` * (1 - v^2).
-    A sliver that follows the wing is what a lamp is; an ellipsoid is a blob."""
-    bmx = bmesh.new(); grid = []
-    nu, nv = 14, 6
+def end_round(u):
+    """Rounds both ends of a lamp outline to a point, so it reads as an almond and not a slab."""
+    return math.sqrt(max(0.0, 1 - abs(2 * u - 1) ** 6))
+
+def lamp_solid(name, material, origin_y, dirn, x0, x1, zc, half_h, s, pad=0.0, front=0.0, dome=0.0, depth=0.08):
+    """A closed lamp-shaped solid. Its front face is a grid over (x, z), each point ray-cast onto
+    the shell and moved `front` out along the normal (negative is recessed) plus a dome; its back
+    is flat, `depth` further in. Used three times per lamp: a cutter that opens a pocket in the
+    body, a dark liner on the pocket floor and the lens itself, so a lamp sits in the car."""
+    bmx = bmesh.new(); nu, nv = 18, 8; grid = []
     for i in range(nu + 1):
         u = i / nu; row = []
         for j in range(nv + 1):
             v = -1 + 2 * j / nv
-            x = s * (x0 + (x1 - x0) * u)
-            z = zc(u) + v * half_h(u)
+            e = end_round(u)
+            x = s * (x0 - pad + (x1 - x0 + 2 * pad) * u)
+            z = zc(u) + v * (half_h(u) + pad) * e
             loc, n = hit((x, origin_y, z), dirn)
-            if not loc: row.append(None); continue
-            bulge = lift + dome * math.sqrt(max(0.0, 1 - v * v)) * math.sin(math.pi * min(1.0, 0.1 + 0.9 * (1 - abs(2 * u - 1) ** 2)))
-            row.append(bmx.verts.new(loc + n * bulge))
+            if not loc: raise RuntimeError(f'{name}: no surface at {x:.2f}, {z:.2f}')
+            out = loc + n * (front + dome * math.sqrt(max(0.0, 1 - v * v)) * e)
+            back = Vector((out.x, loc.y + dirn[1] * depth, out.z))
+            row.append((bmx.verts.new(out), bmx.verts.new(back)))
         grid.append(row)
     for r0, r1 in zip(grid, grid[1:]):
         for j in range(nv):
-            q = (r0[j], r1[j], r1[j + 1], r0[j + 1])
-            if all(q): bmx.faces.new(q if s > 0 else q[::-1])
+            bmx.faces.new((r0[j][0], r1[j][0], r1[j + 1][0], r0[j + 1][0]))
+            bmx.faces.new((r0[j + 1][1], r1[j + 1][1], r1[j][1], r0[j][1]))
+    for j in range(nv):                                  # the two pointed ends
+        bmx.faces.new((grid[0][j + 1][0], grid[0][j][0], grid[0][j][1], grid[0][j + 1][1]))
+        bmx.faces.new((grid[-1][j][0], grid[-1][j + 1][0], grid[-1][j + 1][1], grid[-1][j][1]))
+    for r0, r1 in zip(grid, grid[1:]):                   # top and bottom walls
+        bmx.faces.new((r0[0][0], r0[0][1], r1[0][1], r1[0][0]))
+        bmx.faces.new((r1[nv][0], r1[nv][1], r0[nv][1], r0[nv][0]))
     bmesh.ops.recalc_face_normals(bmx, faces=bmx.faces)
     m = bpy.data.meshes.new(name); bmx.to_mesh(m); bmx.free()
     m.materials.append(material)
@@ -394,19 +410,27 @@ def lens(name, material, origin_y, dirn, x0, x1, zc, half_h, dome, lift, s):
     for p_ in m.polygons: p_.use_smooth = True
     return o
 
+pockets = []        # cutters, applied to the body once every fitting is placed
+def lamp(name, lens_mat, origin_y, dirn, x0, x1, zc, half_h, s):
+    cut = lamp_solid(name + '_cut', M_TRIM, origin_y, dirn, x0, x1, zc, half_h, s, pad=0.010, front=0.05, depth=0.11)
+    pockets.append(cut)
+    liner = lamp_solid(name + '_liner', M_TRIM, origin_y, dirn, x0, x1, zc, half_h, s, pad=0.008, front=-0.025, depth=0.02)
+    fit.append(liner)
+    return lamp_solid(name, lens_mat, origin_y, dirn, x0, x1, zc, half_h, s, pad=0.0, front=-0.012, dome=0.02, depth=0.05)
+
 fit = []
 for s in (-1, 1):
     side = 'l' if s < 0 else 'r'
-    # headlamps: a slim lens swept back and up toward the wing, in a dark bezel
-    hz = lambda u: 0.50 + 0.07 * u
-    hh = lambda u: 0.058 - 0.030 * u
-    fit.append(lens('bezel_h' + str(s), M_TRIM, -3.0, (0, 1, 0), 0.40, 0.86, lambda u: hz(u) + 0.004, lambda u: hh(u) + 0.014, 0.006, 0.002, s))
-    fit.append(lens('lamp_head_' + side, M_HEAD, -3.0, (0, 1, 0), 0.43, 0.83, hz, hh, 0.014, 0.006, s))
-    # tail lamps: a wide, thin lens hooked down at the outer corner
-    tz = lambda u: 0.79 - 0.05 * u * u
-    th = lambda u: 0.052 - 0.020 * u
-    fit.append(lens('bezel_t' + str(s), M_TRIM, 3.0, (0, -1, 0), 0.10, 0.84, lambda u: tz(u) + 0.003, lambda u: th(u) + 0.012, 0.006, 0.002, s))
-    fit.append(lens('lamp_tail_' + side, M_TAIL, 3.0, (0, -1, 0), 0.13, 0.81, tz, th, 0.014, 0.006, s))
+    # headlamps: an almond swept up from the nose toward the crest of the wing
+    fit.append(lamp('lamp_head_' + side, M_HEAD, -3.0, (0, 1, 0), 0.38, 0.65,
+                    lambda u: 0.60 + 0.07 * u, lambda u: 0.046 - 0.018 * u, s))
+    # a projector in the inboard end of each headlamp: a chrome ring round a dark lens
+    for r_, mt_, off_ in ((0.036, M_CHROME, 0.0), (0.026, M_TRIM, 0.006)):
+        loc, n = hit((s * 0.49, -3.0, 0.61), (0, 1, 0))
+        if loc: fit.append(blob('projector', (r_, r_, 0.01), loc + n * (0.012 + off_), n, mt_, sink=0.0))
+    # tail lamps: a wide thin almond hooked down at the outer corner
+    fit.append(lamp('lamp_tail_' + side, M_TAIL, 3.0, (0, -1, 0), 0.13, 0.74,
+                    lambda u: 0.80 - 0.05 * u * u, lambda u: 0.050 - 0.018 * u, s))
     # mirrors: a stalk off the sill of the A-pillar and a flat housing with a dark face
     loc, n = hit((s * 2.0, -0.62, 0.80), (-s, 0, 0))
     if loc:
@@ -496,6 +520,13 @@ fit += [o for o in (
     seam('seam_boot', line((-0.60, 1.62, 2.0), (0.60, 1.62, 2.0)), DOWN, 0.006),
 ) if o]
 
+# ---- open the lamp pockets in the shell (the lens and liner placed above fill them) -------------
+for c in pockets:
+    md = body.modifiers.new('pocket', 'BOOLEAN'); md.object = c; md.operation = 'DIFFERENCE'; md.solver = 'EXACT'
+    bpy.context.view_layer.objects.active = body
+    bpy.ops.object.modifier_apply(modifier='pocket')
+    bpy.data.objects.remove(c, do_unlink=True)
+
 # ---- the bulge joins the body: the loader repaints only the `a_body` mesh, so a separate
 # painted part would keep the model's colour on every car.
 if 'bulge' in globals():
@@ -580,7 +611,7 @@ if PREVIEW:
     scene.render.engine = 'BLENDER_EEVEE'
     ctr = Vector((0, 0, 0.6))
     for name, off, lens in (('front34', (4.2, -4.6, 1.8), 45), ('side', (6.5, 0, 0.9), 45), ('rear34', (-4.2, 4.6, 1.8), 45),
-                            ('front', (0, -7, 1.0), 55), ('chase', (-1.5, 8.5, 3.2), 50)):
+                            ('front', (0, -7, 1.0), 55), ('nose34', (2.2, -5.2, 0.9), 70), ('nose_side', (3.2, -2.6, 0.7), 60), ('chase', (-1.5, 8.5, 3.2), 50)):
         cam.data.lens = lens; cam.location = ctr + Vector(off)
         cam.rotation_euler = (ctr - cam.location).to_track_quat('-Z', 'Y').to_euler()
         scene.render.filepath = f'{PREVIEW}_{name}.png'
