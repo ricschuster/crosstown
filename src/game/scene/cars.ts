@@ -296,6 +296,13 @@ export class CarPool {
     const body = car.children[0] as THREE.Mesh;
     const paint = (body.material as THREE.MeshLambertMaterial).color;
     paint.set(color);
+    // The grade takes 16% of every colour's saturation (scene/grade.ts); the lacquer
+    // gives it back so a red car is still red on screen.
+    if ((body.material as THREE.Material).userData.wear) {
+      const hsl = { h: 0, s: 0, l: 0 };
+      paint.getHSL(hsl);
+      paint.setHSL(hsl.h, Math.min(1, hsl.s * 1.2), hsl.l);
+    }
     if (dim !== 1) paint.multiplyScalar(dim);
     return car;
   }
