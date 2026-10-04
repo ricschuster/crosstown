@@ -196,9 +196,9 @@ def flank_offset(y, z, side_n):
     off = 0.0
     for wy in (WHEELZ, -WHEELZ):        # haunch swell, widest at the arch top
         off += 0.05 * g(y - wy, 0.52) * g(z - 0.66, 0.2)
-    off -= 0.055 * g(y - 0.0, 0.62) * g(z - 0.42, 0.12)      # door scoop
+    off -= 0.075 * g(y - 0.0, 0.70) * g(z - 0.42, 0.13)      # door scoop
     off -= 0.045 * g(y - 0.0, 1.0) * g(z - 0.22, 0.07)         # sill tuck
-    off += 0.024 * g(y - 0.1, 1.0) * g(z - 0.74, 0.04)        # shoulder lip
+    off += 0.034 * g(y - 0.1, 1.1) * g(z - 0.74, 0.045)        # shoulder lip
     return off * side_n
 for v in body.data.vertices:
     # The flank is wherever the shell is near its full width. Gating on the vertex normal instead
@@ -208,6 +208,16 @@ for v in body.data.vertices:
     wgt = max(0.0, min(1.0, (abs(v.co.x) / max(hw_here, 0.05) - 0.88) / 0.08)) * (1.0 if abs(v.co.y) < 2.2 else 0.0)
     if wgt > 0:
         v.co.x += wgt * flank_offset(v.co.y, v.co.z, 1 if v.co.x > 0 else -1)
+body.data.update()
+
+# The nose stations are packed closer past NOSE_T, and the 1 cm shell shows each ring as a faint
+# lump on the wing; a few light smoothing passes over the nose and the front of the wings take
+# that out without moving the profile (the vertices only slide along the surface they sit on).
+bmn = bmesh.new(); bmn.from_mesh(body.data)
+nose_v = [v for v in bmn.verts if v.co.y < -1.0 and v.co.z > 0.36]
+for _ in range(4):
+    bmesh.ops.smooth_vert(bmn, verts=nose_v, factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
+bmn.to_mesh(body.data); bmn.free()
 body.data.update()
 
 # ---- wheel arches by boolean -------------------------------------------------
@@ -361,8 +371,13 @@ def seam(name, pts, direction, width=0.007, lift=0.0015):
     Each point is ray-cast along `direction` so the ribbon follows the surface."""
     hits = []
     for p_ in pts:
-        loc, n = hit(p_, direction)
-        if loc: hits.append((loc, n))
+        # Against the body alone: the scene's depsgraph is stale for objects added since it was
+        # built, so by now it holds the spoiler as an unscaled 2 m cube, and shut lines laid on
+        # that hung in the air at x = 1.0 and z = 1.0 (the stray lines above the mirrors).
+        ok, loc, n, _ = body.ray_cast(Vector(p_), Vector(direction))
+        if ok:
+            if n.dot(Vector(direction)) > 0: n = -n
+            hits.append((loc, n))
     if len(hits) < 2: return None
     bmx = bmesh.new(); row = []
     for i, (loc, n) in enumerate(hits):
