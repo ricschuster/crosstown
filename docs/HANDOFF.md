@@ -3,6 +3,32 @@
 Where the project stands, so a fresh session can pick it up without re-deriving
 anything. This is a solo project: see [CONTRIBUTING](../CONTRIBUTING.md).
 
+- **Update (2026-10-04, later): owner has driven the new Kestrel; order is colour, brake lights, close-up camera and realism, damage staging (#620, #584).**
+  - **Owner's feedback:** the car colour is too dull (more vibrant); damage is
+    not obvious enough at full damage (later); wants the model more realistic,
+    **at close-up as well as chase distance**. Order agreed: (1) colour,
+    (2) brake lights, (3) a close-up camera, then the realism pass (lamps,
+    interior, glass, wheels, fine detail), (4) staged damage as a new Tier 2
+    item. #620 is updated to match (new item 0, "Colour", and two Tier 2 items).
+  - **Why it is dull (not yet changed):** `DIRT = 1` in `scene/glbcar.ts`
+    (grime blend and darkening), the bake's occlusion floor in `shade()`
+    (`0.35 + 0.65 * light`), a 12% metallic base with a half-strength coat, and
+    the **grade** (`GRADE.saturation` 0.84 in `scene/grade.ts`, always on, whole
+    frame, part of the approved look: do not change without the owner's word).
+    Raise the paint's saturation, not its metalness. `?look=particles` is only
+    dust motes and has nothing to do with colour; there is no setting called hue.
+  - **Damage today:** a brown paint lerp, scuff noise and a duller coat, all
+    from `wearPaint()`; staging needs Blender parts shown or hidden by
+    threshold, view-side only, with the first fifth cosmetic (#95).
+  - **A stale-browser scare:** the owner saw the older Kestrel on port 5173 and
+    after a refresh; the server and the committed `kestrel.glb` (1,704,444 bytes)
+    were right, a fresh origin (5191, then 5192) fixed it, cause never found
+    (likely an old service worker or cache on 5173). Headless runs showed the
+    new model at damage 0 and 1. **Uncommitted:** `glbcar.ts` now shows a red
+    on-screen note when `kestrel.glb` fails to load, so a fallback to the
+    procedural car is visible; typecheck passes, the banner is untested.
+  - **Dev server:** one on port 5192 from this checkout (the 5173 and 5191 ones
+    were stopped by PID). Stop only your own PID, never `pkill -f`.
 - **Update (2026-10-04): Kestrel nose, tail and paint done; brake lights then Tier 2 next (#620, #584).**
   The owner asked to improve the Kestrel further; the plan is issue **#620**
   (checkboxes, Tier 1 then Tier 2). Read it, then the "Nose and tail" and
