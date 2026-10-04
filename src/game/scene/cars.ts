@@ -4,7 +4,7 @@ import { carParts, CAR_PAINT } from './carshape';
 import type { CarBody } from '../cars';
 import type { CopKind } from '../constants';
 import { lampGlowTexture } from './signage';
-import { kestrelParts } from './glbcar';
+import { compensateForGrade, kestrelParts } from './glbcar';
 
 /**
  * What each police unit is drawn as (#584). Drawing only, and kept here rather
@@ -323,13 +323,9 @@ export class CarPool {
     const body = car.children[0] as THREE.Mesh;
     const paint = (body.material as THREE.MeshLambertMaterial).color;
     paint.set(color);
-    // The grade takes 16% of every colour's saturation (scene/grade.ts); the lacquer
-    // gives it back so a red car is still red on screen.
-    if ((body.material as THREE.Material).userData.wear) {
-      const hsl = { h: 0, s: 0, l: 0 };
-      paint.getHSL(hsl);
-      paint.setHSL(hsl.h, Math.min(1, hsl.s * 1.2), hsl.l);
-    }
+    // The grade veils a lacquer (scene/grade.ts); `compensateForGrade` gives it back
+    // so a red car is still red on screen.
+    if ((body.material as THREE.Material).userData.wear) compensateForGrade(paint);
     if (dim !== 1) paint.multiplyScalar(dim);
     return car;
   }

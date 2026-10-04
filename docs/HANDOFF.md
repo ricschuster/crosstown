@@ -25,6 +25,13 @@ anything. This is a solo project: see [CONTRIBUTING](../CONTRIBUTING.md).
     into pink. The grade is the approved look, so the owner chose **option 1: compensate in the paint** (darker and more
     saturated in `CarPool.place`, next to the existing 1.2x saturation boost), not touch the grade. Options 2 (soften the grade)
     and 3 (cars outside the grade pass) are not chosen.
+  - **Option 1 built and measured (`compensateForGrade` in `scene/glbcar.ts`, used by `CarPool.place` and the view's own
+    car, which had NO compensation before): only a slight gain.** A sweep of ever darker paint (`salmon/sweep.png`) showed the
+    top and rear surfaces keep a salmon sheen even over near-black pigment, so the veil is ADDED after the paint: the grade's
+    `c += lift * (1 - lit)` (`scene/grade.ts`), plus the golden-hour `horizon` veil across the mid-frame band where the chase-camera
+    car sits. Paint cannot beat an additive. Before/after: `salmon/before_after.png`. Constants `GRADE_SATURATION_BACK` 1.35,
+    `GRADE_DARKEN` 0.6. **Real fix, owner's call:** make the lift (and horizon veil) fade out on saturated pixels, e.g.
+    `lift * (1 - lit) * (1 - sat)`, which leaves the grey road and shadows exactly as approved and only stops the veil on colour.
   - **Salmon investigation (original plan, kept for the method):** suspects, most likely first: (1) sky reflection washing the clear coat
     (`envMapIntensity` 0.7, the PMREM probe in `cityview.ts`, which the #627 probe change only helps on side-facing
     surfaces); (2) the colour grade and fill light lowering contrast (`scene/grade.ts` takes 16% saturation, `CarPool.place`
